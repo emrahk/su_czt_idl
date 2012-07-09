@@ -4,6 +4,17 @@
 ;coulombfield(apos,aener,onindex,cloudnumb)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;returns electric field :::: in progress
+FUNCTION elecfield,apos,onindex,cloudnumb
+
+efield=dblarr(3,cloudnumb)
+efield(2,onindex)=efield(2,onindex)+100000
+
+RETURN,efield
+
+END
+
+
 ;returns coulomb field related to all clouds
 ;onindex controls if the cloud is available
 FUNCTION coulombfield,apos,aener,onindex,cloudnumb
@@ -11,7 +22,7 @@ FUNCTION coulombfield,apos,aener,onindex,cloudnumb
 cfield=dblarr(3,cloudnumb)
 
 ;some values
-apos = apos*1000
+apos = apos*1000 ;mm to m
 cntr=0
 cnst=1.30968e-10;(conste)/(4*pi*epsilon)
 bandgap = 2

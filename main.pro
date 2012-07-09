@@ -14,4 +14,3 @@ onindex(1286)=0
 onindex = WHERE ( onindex EQ 1)
 
 cfield = coulombfield(pos,ener,onindex,cloudnumb)
-exit
