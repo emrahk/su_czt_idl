@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Yiğit Dallılar 17/06/2012
-;functions :
+;functions  :
 ;-getdata(/data,/cnt)
 ;-getinfo(/pos,/ener,/numb)
 ;-eventcount()
