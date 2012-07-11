@@ -39,7 +39,7 @@ FOR i=0,cloudnumb-1 DO BEGIN
    IF (i EQ onindex(cntr)) THEN BEGIN
 
     ;selcloud holds information for selected cloud
-    fieldvector(*,onindex)=apos(*,onindex)
+    ;;;fieldvector(*,onindex)=apos(*,onindex)
     FOR j=0,2 DO selcloud(j,*) = selcloud(j,*) + apos (j,i)
     fieldvector(*,onindex) = selcloud(*,onindex) - apos(*,onindex)
 
