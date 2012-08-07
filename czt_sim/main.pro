@@ -68,7 +68,7 @@ ENDIF ELSE BEGIN
          xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
          ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
          ind = where(dvdcloud[i].xe_actual ne 0.,count)
-         FOR j=count,count+lene+1 DO BEGIN
+         FOR j=count+1,count+lene+1 DO BEGIN
             dvdcloud[i].xe_actual[j]=xe_actual[j-count-1]
             dvdcloud[i].ze_actual[j]=ze_actual[j-count-1]
          ENDFOR
@@ -104,6 +104,7 @@ ENDELSE
 FOR i=0,cloudnumb-1 DO BEGIN
    hole_motion,pos[0,i],pos[2,i],efx,efz,a,b,c,th_actual,xh_actual,zh_actual,coarsegridpos=[1.025,4.5]
    lenh = floor(max(th_actual)*1e8)
+   IF lenh gt 999 THEN lenh = 999
    xh_actual=interpol(xh_actual,th_actual,timeh[0:lenh])
    zh_actual=interpol(zh_actual,th_actual,timeh[0:lenh])
    FOR j=0,lenh DO BEGIN
@@ -168,8 +169,8 @@ ENDIF ELSE BEGIN
       grid_dist,sigma,divcloud,calc
       FOR i=0,cloudnumb-1 DO BEGIN
          FOR k=0,divcloud-1 DO BEGIN
-            x=floor(dvdcloud[5*i+k].xe_actual[m]/0.005)
-            z=floor(dvdcloud[5*i+k].ze_actual[m]/0.005)
+            x=floor(dvdcloud[divcloud*i+k].xe_actual[m]/0.005)
+            z=floor(dvdcloud[divcloud*i+k].ze_actual[m]/0.005)
             IF z gt 5 THEN q[i] = Qr_e[i]*exp(-timee[m]/taue)
             FOR j=0,15 DO BEGIN
                QAinde[j,m] = QAinde[j,m] + wpa[j,x,z]*calc[k]*q[i]
