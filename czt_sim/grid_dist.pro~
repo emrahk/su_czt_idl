@@ -12,7 +12,7 @@ END
 
 PRO grid_dist,sigma,num,calc
 
-  sigma = sigma * 1000000
+  sigma = sigma*1000000
   total=0
   calc=dblarr(num)
   FOR i=0,num-1 DO BEGIN

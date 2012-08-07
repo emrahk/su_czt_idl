@@ -16,7 +16,7 @@ PRO grid_dist,sigma,num,calc
   total=0
   calc=dblarr(num)
   FOR i=0,num-1 DO BEGIN
-     calc[i]=integ(sigma,-num*5+i*10,-num*5+(i+1)*10)
+     calc[i]=integ(sigma,-num*2.5+i*5,-num*2.5+(i+1)*5)
      total=total+calc[i]
   ENDFOR
 

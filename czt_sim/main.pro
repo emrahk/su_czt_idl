@@ -1,4 +1,7 @@
-PRO main,data,ndata,efx,efz,wpa,wpc,wpst,eventnumb,plot=plot
+PRO main,data,ndata,efx,efz,wpa,wpc,wpst,eventnumb,time,qc,qa,qst, $
+         qainde,qaindh,qcinde,qcindh,qstinde,qstindh,clouddiv=divcloud,divide=divide,plot=plot
+
+IF NOT keyword_set(divcloud) THEN divcloud = 1
 
 geteventinfo,data,eventnumb,pos,ener
 cloudnumb = n_elements(ener)
@@ -12,20 +15,58 @@ cnth=0
 timee = findgen(1000)*1e-9
 timeh = findgen(1000)*10e-9
 
-FOR i=0,cloudnumb-1 DO BEGIN
-   electron_motion,0.,pos[0,i],pos[2,i],efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
-   lene = floor(max(te_actual)*1e9)
-   xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
-   ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
-   FOR j=0,lene DO BEGIN
-      cloud[i].xe_actual[j]=xe_actual[j]
-      cloud[i].ze_actual[j]=ze_actual[j]
+IF NOT keyword_set(divide) THEN BEGIN
+   FOR i=0,cloudnumb-1 DO BEGIN
+      electron_motion,0.,pos[0,i],pos[2,i],efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
+      lene = floor(max(te_actual)*1e9)
+      xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
+      ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
+      FOR j=0,lene DO BEGIN
+         cloud[i].xe_actual[j]=xe_actual[j]
+         cloud[i].ze_actual[j]=ze_actual[j]
+      ENDFOR
+      FOR j=lene+1,999 DO BEGIN
+         cloud[i].xe_actual[j]=xe_actual[lene]
+         cloud[i].ze_actual[j]=ze_actual[lene]
+      ENDFOR
    ENDFOR
-   FOR j=lene+1,999 DO BEGIN
-      cloud[i].xe_actual[j]=xe_actual[lene]
-      cloud[i].ze_actual[j]=ze_actual[lene]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ENDIF ELSE BEGIN
+   t = intarr(cloudnumb*divcloud)
+   dvdcloud = create_struct('xe_actual',dblarr(1000),'ze_actual',dblarr(1000),'te_actual',dblarr(1000))
+   dvdcloud = replicate(dvdcloud,cloudnumb*divcloud)
+   FOR i=0,cloudnumb-1 DO BEGIN
+      electron_motion,1.,pos[0,i],pos[2,i],efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
+      lene = floor(max(te_actual)*1e9)
+      xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
+      ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
+      FOR k=0,divcloud-1  DO BEGIN 
+         t[divcloud*i+k]=lene
+         FOR j=0,lene DO BEGIN
+            dvdcloud[divcloud*i+k].xe_actual[j]=xe_actual[j]+(k-(divcloud-1)/2)*0.005
+            dvdcloud[divcloud*i+k].ze_actual[j]=ze_actual[j]
+         ENDFOR
+      ENDFOR  
    ENDFOR
-ENDFOR
+   
+   FOR i=0,cloudnumb*divcloud-1 DO BEGIN
+      electron_motion,0.,dvdcloud[i].xe_actual[t[i]],1.07,efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
+      lene = floor(max(te_actual)*1e9)
+      xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
+      ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
+      ind = where(dvdcloud[i].xe_actual ne 0.,count)
+      FOR j=count+1,count+lene+1 DO BEGIN
+         dvdcloud[i].xe_actual[j]=xe_actual[j-count-1]
+         dvdcloud[i].ze_actual[j]=ze_actual[j-count-1]
+      ENDFOR
+      FOR j=count+lene+2,999 DO BEGIN
+         dvdcloud[i].xe_actual[j]=xe_actual[lene]
+         dvdcloud[i].ze_actual[j]=ze_actual[lene]
+      ENDFOR
+   ENDFOR
+ENDELSE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 FOR i=0,cloudnumb-1 DO BEGIN
    hole_motion,pos[0,i],pos[2,i],efx,efz,a,b,c,th_actual,xh_actual,zh_actual,coarsegridpos=[1.025,4.5]
@@ -42,18 +83,30 @@ FOR i=0,cloudnumb-1 DO BEGIN
    ENDFOR
 ENDFOR
 
+;**********************************************************************************************
+
 IF keyword_set(plot) THEN BEGIN
-   FOR i=0,cloudnumb-1 DO BEGIN
-      xe_actual = reform(cloud[i].xe_actual[where(cloud[i].xe_actual ne 0 )])
-      ze_actual = reform(cloud[i].ze_actual[where(cloud[i].ze_actual ne 0 )])
-      trajectory,xe_actual,ze_actual,i
-   ENDFOR
+   IF NOT keyword_set(divide) THEN BEGIN
+      FOR i=0,cloudnumb-1 DO BEGIN
+         xe_actual = reform(cloud[i].xe_actual[where(cloud[i].xe_actual ne 0 )])
+         ze_actual = reform(cloud[i].ze_actual[where(cloud[i].ze_actual ne 0 )])
+         trajectory,xe_actual,ze_actual,i
+      ENDFOR
+   ENDIF ELSE BEGIN
+      FOR i=0,cloudnumb*divcloud-1 DO BEGIN
+         xe_actual = reform(dvdcloud[i].xe_actual[where(dvdcloud[i].xe_actual ne 0 )])
+         ze_actual = reform(dvdcloud[i].ze_actual[where(dvdcloud[i].ze_actual ne 0 )])
+         trajectory,xe_actual,ze_actual,i
+      ENDFOR
+   ENDELSE
    FOR i=0,cloudnumb-1 DO BEGIN
       xe_actual = reform(holes[i].xh_actual[where(holes[i].xh_actual ne 0 )])
       ze_actual = reform(holes[i].zh_actual[where(holes[i].zh_actual ne 0 )])
       trajectory,xe_actual,ze_actual,1,/hole
    ENDFOR
 ENDIF
+
+;**********************************************************************************************
 
 taue = 3e-6 
 tauh = 1e-6
@@ -67,29 +120,51 @@ QCindh = dblarr(16,1000)
 QSTindh = dblarr(5,1000)
 q = dblarr(cloudnumb)
 
-FOR m=0,999 DO BEGIN
-   cloudsize,result,timearr,ftime=timee[m]
-   sigma = result(n_elements(result)-1)
-   grid_dist,sigma,1,calc
-   FOR i=0,cloudnumb-1 DO BEGIN
-      x=floor(cloud[i].xe_actual[m]/0.005)
-      z=floor(cloud[i].ze_actual[m]/0.005)
-      IF z gt 5 THEN q[i] = Qr_e[i]*exp(-timee[m]/taue)
-      FOR k=0,0 DO BEGIN
-         FOR j=0,15 DO BEGIN
-           QAinde[j,m] = QAinde[j,m] + wpa[j,x+2*k-0,z]*calc[k]*q[i]
-           QCinde[j,m] = QCinde[j,m] + wpc[j,x+2*k-0,z]*calc[k]*q[i]
-           IF (j lt 5) THEN QSTinde[j,m] = QSTinde[j,m] + wpst[j,x+2*k-8,z]*calc[k]*q[i]
-        ENDFOR
-     ENDFOR
+IF NOT keyword_set(divide) THEN BEGIN
+   FOR m=0,999 DO BEGIN
+      cloudsize,result,timearr,ftime=timee[m]
+      sigma = result(n_elements(result)-1)
+      grid_dist,sigma,divcloud,calc
+      FOR i=0,cloudnumb-1 DO BEGIN
+         x=floor(cloud[i].xe_actual[m]/0.005)
+         z=floor(cloud[i].ze_actual[m]/0.005)
+         IF z gt 5 THEN q[i] = Qr_e[i]*exp(-timee[m]/taue)
+         FOR k=0,divcloud-1 DO BEGIN
+            FOR j=0,15 DO BEGIN
+               QAinde[j,m] = QAinde[j,m] + wpa[j,x+k-(divcloud-1),z]*calc[k]*q[i]
+               QCinde[j,m] = QCinde[j,m] + wpc[j,x+2*k-0,z]*calc[k]*q[i]
+               IF (j lt 5) THEN QSTinde[j,m] = QSTinde[j,m] + wpst[j,x+2*k-8,z]*calc[k]*q[i]
+            ENDFOR
+         ENDFOR
+      ENDFOR
    ENDFOR
-ENDFOR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ENDIF ELSE BEGIN
+   FOR m=0,999 DO BEGIN
+      cloudsize,result,timearr,ftime=timee[m]
+      sigma = result(n_elements(result)-1)
+      grid_dist,sigma,divcloud,calc
+      FOR i=0,cloudnumb-1 DO BEGIN
+         ;IF t[i]*1e-9 le timee[m] THEN cloudsize,result,timearr,ftime=timee[m] ELSE cloudsize,result,timearr,ftime=(t[i]*1e-9)
+         FOR k=0,divcloud-1 DO BEGIN
+            x=floor(dvdcloud[5*i+k].xe_actual[m]/0.005)
+            z=floor(dvdcloud[5*i+k].ze_actual[m]/0.005)
+            IF z gt 5 THEN q[i] = Qr_e[i]*exp(-timee[m]/taue)
+            FOR j=0,15 DO BEGIN
+               QAinde[j,m] = QAinde[j,m] + wpa[j,x,z]*calc[k]*q[i]
+               QCinde[j,m] = QCinde[j,m] + wpc[j,x,z]*calc[k]*q[i]
+               IF (j lt 5) THEN QSTinde[j,m] = QSTinde[j,m] + wpst[j,x,z]*calc[k]*q[i]
+            ENDFOR
+         ENDFOR
+      ENDFOR
+   ENDFOR
+ENDELSE
 
 FOR m=0,999 DO BEGIN
    FOR i=0,cloudnumb-1 DO BEGIN
       x=floor(holes[i].xh_actual[m]/0.005)
       z=floor(holes[i].zh_actual[m]/0.005)
-      IF holes[i].zh_actual[m] lt 4.98 THEN q[i] = Qr_h[i]*exp(-timeh[m]/5*tauh)
+      IF holes[i].zh_actual[m] lt 4.98 THEN q[i] = Qr_h[i]*exp(-timeh[m]/tauh)
       FOR j=0,15 DO BEGIN
          QAindh[j,m] = QAindh[j,m] + wpa[j,x,z]*q[i]
          QCindh[j,m] = QCindh[j,m] + wpc[j,x,z]*q[i]
@@ -114,7 +189,5 @@ FOR i=0,15 DO BEGIN
 ENDFOR
 
 time=timeh
-
-stop
 
 END
