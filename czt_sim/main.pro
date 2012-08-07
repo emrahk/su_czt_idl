@@ -9,6 +9,17 @@ cloud = create_struct('xe_actual',dblarr(1000),'ze_actual',dblarr(1000),'te_actu
 holes = create_struct('xh_actual',dblarr(1000),'zh_actual',dblarr(1000),'th_actual',dblarr(1000))
 cloud = replicate (cloud,cloudnumb)
 holes = replicate (holes,cloudnumb)
+taue = 3e-6 ;3e-6
+tauh = 1e-6
+Qr_e = ener   ;???????? 2 choosen as bandgap !!!multiply by e
+QAinde = dblarr(16,1000)
+QCinde = dblarr(16,1000)
+QSTinde = dblarr(5,1000)
+Qr_h = -ener   ;???????? 2 choosen as bandgap !!!multiply by e
+QAindh = dblarr(16,1000)
+QCindh = dblarr(16,1000)
+QSTindh = dblarr(5,1000)
+q = dblarr(cloudnumb)
 
 cnte=0
 cnth=0
@@ -35,35 +46,57 @@ ENDIF ELSE BEGIN
    t = intarr(cloudnumb*divcloud)
    dvdcloud = create_struct('xe_actual',dblarr(1000),'ze_actual',dblarr(1000),'te_actual',dblarr(1000))
    dvdcloud = replicate(dvdcloud,cloudnumb*divcloud)
-   FOR i=0,cloudnumb-1 DO BEGIN
-      electron_motion,1.,pos[0,i],pos[2,i],efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
-      lene = floor(max(te_actual)*1e9)
-      xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
-      ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
-      FOR k=0,divcloud-1  DO BEGIN 
-         t[divcloud*i+k]=lene
-         FOR j=0,lene DO BEGIN
-            dvdcloud[divcloud*i+k].xe_actual[j]=xe_actual[j]+(k-(divcloud-1)/2)*0.005
-            dvdcloud[divcloud*i+k].ze_actual[j]=ze_actual[j]
-         ENDFOR
-      ENDFOR  
-   ENDFOR
+   index = where (pos[2,*] le 1.,count)
+   IF count eq 0 THEN BEGIN
+      FOR i=0,cloudnumb-1 DO BEGIN
+         electron_motion,1.,pos[0,i],pos[2,i],efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
+         lene = floor(max(te_actual)*1e9)
+         xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
+         ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
+         FOR k=0,divcloud-1  DO BEGIN 
+            t[divcloud*i+k]=lene
+            FOR j=0,lene DO BEGIN
+               dvdcloud[divcloud*i+k].xe_actual[j]=xe_actual[j]+(k-(divcloud-1)/2)*0.005
+               dvdcloud[divcloud*i+k].ze_actual[j]=ze_actual[j]
+            ENDFOR
+         ENDFOR  
+      ENDFOR
    
-   FOR i=0,cloudnumb*divcloud-1 DO BEGIN
-      electron_motion,0.,dvdcloud[i].xe_actual[t[i]],1.07,efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
-      lene = floor(max(te_actual)*1e9)
-      xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
-      ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
-      ind = where(dvdcloud[i].xe_actual ne 0.,count)
-      FOR j=count+1,count+lene+1 DO BEGIN
-         dvdcloud[i].xe_actual[j]=xe_actual[j-count-1]
-         dvdcloud[i].ze_actual[j]=ze_actual[j-count-1]
+      FOR i=0,cloudnumb*divcloud-1 DO BEGIN
+         electron_motion,0.,dvdcloud[i].xe_actual[t[i]],1.07,efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
+         lene = floor(max(te_actual)*1e9)
+         xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
+         ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
+         ind = where(dvdcloud[i].xe_actual ne 0.,count)
+         FOR j=count,count+lene+1 DO BEGIN
+            dvdcloud[i].xe_actual[j]=xe_actual[j-count-1]
+            dvdcloud[i].ze_actual[j]=ze_actual[j-count-1]
+         ENDFOR
+         FOR j=count+lene+2,999 DO BEGIN
+            dvdcloud[i].xe_actual[j]=xe_actual[lene]
+            dvdcloud[i].ze_actual[j]=ze_actual[lene]
+         ENDFOR
       ENDFOR
-      FOR j=count+lene+2,999 DO BEGIN
-         dvdcloud[i].xe_actual[j]=xe_actual[lene]
-         dvdcloud[i].ze_actual[j]=ze_actual[lene]
+   ENDIF ELSE BEGIN
+      FOR i=0,cloudnumb*divcloud-1 DO BEGIN
+         cnumb = i MOD divcloud
+         grid = i MOD cloudnumb
+         electron_motion,0.,pos[0,cnumb],pos[2,cnumb]+(grid-2)*0.005,efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
+         lene = floor(max(te_actual)*1e9)
+         xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
+         ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
+         ind = where(dvdcloud[i].xe_actual ne 0.,count)
+         FOR j=count,count+lene+1 DO BEGIN
+            dvdcloud[i].xe_actual[j]=xe_actual[j-count-1]
+            dvdcloud[i].ze_actual[j]=ze_actual[j-count-1]
+         ENDFOR
+         FOR j=count+lene+2,999 DO BEGIN
+            dvdcloud[i].xe_actual[j]=xe_actual[lene]
+            dvdcloud[i].ze_actual[j]=ze_actual[lene]
+         ENDFOR
       ENDFOR
-   ENDFOR
+   
+   ENDELSE
 ENDELSE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -108,18 +141,6 @@ ENDIF
 
 ;**********************************************************************************************
 
-taue = 3e-6 
-tauh = 1e-6
-Qr_e = ener   ;???????? 2 choosen as bandgap !!!multiply by e
-QAinde = dblarr(16,1000)
-QCinde = dblarr(16,1000)
-QSTinde = dblarr(5,1000)
-Qr_h = -ener   ;???????? 2 choosen as bandgap !!!multiply by e
-QAindh = dblarr(16,1000)
-QCindh = dblarr(16,1000)
-QSTindh = dblarr(5,1000)
-q = dblarr(cloudnumb)
-
 IF NOT keyword_set(divide) THEN BEGIN
    FOR m=0,999 DO BEGIN
       cloudsize,result,timearr,ftime=timee[m]
@@ -141,11 +162,11 @@ IF NOT keyword_set(divide) THEN BEGIN
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ENDIF ELSE BEGIN
    FOR m=0,999 DO BEGIN
-      cloudsize,result,timearr,ftime=timee[m]
+      ;cloudsize,result,timearr,ftime=timee[m]
+      IF t[i]*1e-9 le timee[m] THEN cloudsize,result,timearr,ftime=timee[m] ELSE cloudsize,result,timearr,ftime=(t[i]*1e-9)
       sigma = result(n_elements(result)-1)
       grid_dist,sigma,divcloud,calc
       FOR i=0,cloudnumb-1 DO BEGIN
-         ;IF t[i]*1e-9 le timee[m] THEN cloudsize,result,timearr,ftime=timee[m] ELSE cloudsize,result,timearr,ftime=(t[i]*1e-9)
          FOR k=0,divcloud-1 DO BEGIN
             x=floor(dvdcloud[5*i+k].xe_actual[m]/0.005)
             z=floor(dvdcloud[5*i+k].ze_actual[m]/0.005)
