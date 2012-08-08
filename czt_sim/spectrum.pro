@@ -9,8 +9,10 @@ PRO spectrum,data,efx,efz,wpa,wpc,wpst,spe
   cathode = dblarr(16,131)
   steer = dblarr(5,131)
   perc=0
+  ;count=11
 
-  FOR i=0,count-1 DO BEGIN
+  ;;;;;;;;;;;;;
+  FOR i=260,count-1 DO BEGIN
      main,data,ndata,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst, $
          qainde,qaindh,qcinde,qcindh,qstinde,qstindh,clouddiv=3,/div
 
@@ -20,16 +22,16 @@ PRO spectrum,data,efx,efz,wpa,wpc,wpst,spe
      ENDIF
 
      ;dont know how to read?
-     FOR j=0,15 DO anarr[j,i] = qa[j,te]
-     FOR j=0,15 DO caarr[j,i] = qc[j,te]
-     FOR j=0,4 DO starr[j,i] = qst[j,te]
+     FOR j=0,15 DO anarr[j,i] = max(qa[j,0:te])
+     FOR j=0,15 DO caarr[j,i] = max(qc[j,0:te])
+     FOR j=0,4 DO starr[j,i] = max(qst[j,0:te])
      
   ENDFOR
-  
-  FOR i=0,15 DO anode[i] = histogram(anode[i,*],min=0,max=130)
-  FOR i=0,15 DO cathode[i] = histogram(cathode[i,*],min=0,max=130)
-  FOR i=0,4 DO steer[i] = histogram(steer[i,*],min=0,max=130)
 
-  spe = create_struct(name='anode',name='cathode',name='steer')
+  FOR i=0,15 DO anode[i,0:130] = histogram(anarr[i,0:count-1],min=0,max=130)
+  FOR i=0,15 DO cathode[i,0:130] = histogram(caarr[i,0:count-1],min=0,max=130)
+  FOR i=0,4 DO steer[i,0:130] = histogram(starr[i,0:count-1],min=0,max=130)
+
+  spe = create_struct('anode',anode,'cathode',cathode,'steer',steer)
 
 END
