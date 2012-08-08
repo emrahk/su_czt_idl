@@ -1,3 +1,14 @@
+;calculates charge distribution with position interval 5
+;INPUT
+;----------------------------
+;sigma : sigma of the cloud getting from cloudsize.pro
+;num   : number of grids to calculate the charge stayed of border
+;added to border grids
+;OUTPUT
+;----------------------------
+;calc  : array of calculation with size of num value
+
+;function for rieman integral
 FUNCTION integ,x,f,l
   int=0.01
   steps=((l-f)/int)
@@ -12,6 +23,7 @@ END
 
 PRO grid_dist,sigma,num,calc
 
+  ;makes calculation
   sigma = sigma*1000000
   total=0
   calc=dblarr(num)
@@ -20,6 +32,7 @@ PRO grid_dist,sigma,num,calc
      total=total+calc[i]
   ENDFOR
 
+  ;add out of border charges to last grids
   calc[0]=calc[0] + (1-total)/2
   calc[n_elements(calc)-1] = calc[n_elements(calc)-1] + (1-total)/2
 

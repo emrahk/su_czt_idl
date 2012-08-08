@@ -1,4 +1,11 @@
+;plots trajectory
 PRO trajectory,xac,zac,i,hole=hole
+
+;INPUT
+;------------------------------
+;xac,zac : postion arrays
+;i       : if 0 plot else oplot
+;hole    : dotted line for holes
 
   IF i eq 0 THEN BEGIN 
      window,1,xsize=1200,ysize=300
