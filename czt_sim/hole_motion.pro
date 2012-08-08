@@ -155,6 +155,10 @@ ENDELSE
 
 x=floor(xhv/gx+0.5)                  ; Define new x position in the nearest grid point
 
+;should stay in the detector
+IF x gt 3908 THEN x=3908
+IF x lt 0 THEN x=0
+
 IF ((Efieldz[x,z] LT 0.) AND (Abs(Dxh/gx) LT 1.)) THEN BEGIN
    loopcheck=0 
    print, 'motion will be stopped here to avoid loop'

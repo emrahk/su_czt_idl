@@ -121,8 +121,10 @@ t=0.                                ; Starting time
 ;------ OBTAIN INDUCED CHARGES WITH RESPECT TO THE DIRECTON OF ELECTRIC FIELD ------
 
 loopcheck=1
+;;;;;;;;;;;;;;;;;;????????????????????????
+IF z lt 15 THEN cntrl = 1 ELSE cntrl = 0
 
-WHILE ((z gt floor(lastpos/0.005)+15) AND (Abs(Efieldz[x,z]) GT 3.) AND loopcheck) DO BEGIN
+WHILE ((z gt floor(lastpos/0.005)+15)  AND (Abs(Efieldz[x,z]) GT 3.) AND loopcheck) DO BEGIN
 
 ;I am not happy about this magic number 3 here, need to find another way to 
 ;catch this problem
@@ -132,8 +134,8 @@ IF n_elements(z) GT 1 THEN STOP
 ; Check electric field and make sure electron moves
 
 IF ((z LT coarsezstart) OR (z GT coarsezend)) THEN gz=0.005 ELSE gz=0.025
-
-Dte = gz/(mobe*Efieldz[x,z])          ; Obtain time step
+;;;;;??????????????????????????
+Dte = ABS(gz/(mobe*Efieldz[x,z]))          ; Obtain time step
 t = t+Dte
 te_actual = [te_actual,t]           ; In order to find in terms of nanosecond, I multiplied by *(1*E9)
 
@@ -169,6 +171,10 @@ ENDELSE
 
 x=floor(xev/gx+0.5)                       ; Obtain new x position in the nearest grid point
 
+;should stay in the detector
+IF x gt 3908 THEN x = 3908
+IF x lt 0 THEN x = 0
+
 ;make sure x stays in detector
 
 IF x GE aa[1] THEN BEGIN
@@ -181,7 +187,7 @@ IF x LE 0. THEN BEGIN
   x=0
   ENDIF
  
-
+;stop
 IF ((Efieldz[x,z] LT 0.) AND (Abs(Dxe/gx) LT 1.)) THEN BEGIN
    loopcheck=0 
    IF verbose THEN print, 'motion will be stopped here to avoid loop'
