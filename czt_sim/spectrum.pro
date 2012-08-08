@@ -12,7 +12,7 @@ PRO spectrum,data,efx,efz,wpa,wpc,wpst,spe
   ;count=11
 
   ;;;;;;;;;;;;;
-  FOR i=260,count-1 DO BEGIN
+  FOR i=0,count-1 DO BEGIN
      main,data,ndata,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst, $
          qainde,qaindh,qcinde,qcindh,qstinde,qstindh,clouddiv=3,/div
 

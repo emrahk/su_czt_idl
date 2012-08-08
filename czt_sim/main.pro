@@ -34,6 +34,8 @@ IF NOT keyword_set(divide) THEN BEGIN
       ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
       FOR j=0,lene DO BEGIN
          cloud[i].xe_actual[j]=xe_actual[j]
+         IF cloud[i].xe_actual[j] gt 19.54 THEN cloud[i].xe_actual[j] = 19.54
+         IF cloud[i].xe_actual[j] lt 0 THEN cloud[i].xe_actual[j] = 0
          cloud[i].ze_actual[j]=ze_actual[j]
       ENDFOR
       FOR j=lene+1,999 DO BEGIN
@@ -59,7 +61,7 @@ ENDIF ELSE BEGIN
                dvdcloud[divcloud*i+k].xe_actual[j]=xe_actual[j]+(k-(divcloud-1)/2)*0.005
                ;should be inside the detector
                IF dvdcloud[divcloud*i+k].xe_actual[j] gt 19.54 THEN dvdcloud[divcloud*i+k].xe_actual[j] = 19.54
-               IF dvdcloud[divcloud*i+k].xe_actual[j] gt 0 THEN dvdcloud[divcloud*i+k].xe_actual[j] = 0
+               IF dvdcloud[divcloud*i+k].xe_actual[j] lt 0 THEN dvdcloud[divcloud*i+k].xe_actual[j] = 0
                dvdcloud[divcloud*i+k].ze_actual[j]=ze_actual[j]
             ENDFOR
          ENDFOR  
@@ -73,6 +75,8 @@ ENDIF ELSE BEGIN
          ind = where(dvdcloud[i].xe_actual ne 0.,count)
          FOR j=count+1,count+lene+1 DO BEGIN
             dvdcloud[i].xe_actual[j]=xe_actual[j-count-1]
+            IF dvdcloud[i].xe_actual[j] gt 19.54 THEN dvdcloud[i].xe_actual[j] = 19.54
+            IF dvdcloud[i].xe_actual[j] lt 0 THEN dvdcloud[i].xe_actual[j] = 0
             dvdcloud[i].ze_actual[j]=ze_actual[j-count-1]
          ENDFOR
          FOR j=count+lene+2,999 DO BEGIN
@@ -91,6 +95,8 @@ ENDIF ELSE BEGIN
          ind = where(dvdcloud[i].xe_actual ne 0.,count)
          FOR j=count,count+lene+1 DO BEGIN
             dvdcloud[i].xe_actual[j]=xe_actual[j-count-1]
+            IF dvdcloud[i].xe_actual[j] gt 19.54 THEN dvdcloud[i].xe_actual[j] = 19.54
+            IF dvdcloud[i].xe_actual[j] lt 0 THEN dvdcloud[i].xe_actual[j] = 0
             dvdcloud[i].ze_actual[j]=ze_actual[j-count-1]
          ENDFOR
          FOR j=count+lene+2,999 DO BEGIN
@@ -112,6 +118,8 @@ FOR i=0,cloudnumb-1 DO BEGIN
    zh_actual=interpol(zh_actual,th_actual,timeh[0:lenh])
    FOR j=0,lenh DO BEGIN
       holes[i].xh_actual[j]=xh_actual[j]
+      IF holes[i].xh_actual[j] gt 19.54 THEN holes[i].xh_actual[j] = 19.54
+      IF holes[i].xh_actual[j] lt 0 THEN holes[i].xh_actual[j] = 0
       holes[i].zh_actual[j]=zh_actual[j]
    ENDFOR
    FOR j=lenh,999 DO BEGIN
@@ -153,17 +161,16 @@ IF NOT keyword_set(divide) THEN BEGIN
       FOR i=0,cloudnumb-1 DO BEGIN
          x=floor(cloud[i].xe_actual[m]/0.005)
          z=floor(cloud[i].ze_actual[m]/0.005)
-         IF x gt 3908 THEN x=3908
          IF z gt 5 THEN q[i] = Qr_e[i]*exp(-timee[m]/taue)
          FOR k=0,divcloud-1 DO BEGIN
-            pos = x+k-(divcloud-1)
-            IF pos gt 3908 THEN pos = 3908
-            IF pos lt 0 THEN pos = 0
+            place = x+k-(divcloud-1)
+            IF place gt 3908 THEN place = 3908
+            IF place lt 0 THEN place = 0
             FOR j=0,15 DO BEGIN
                ;QAinde[j,m] = QAinde[j,m] + wpa[j,x+k-(divcloud-1),z]*calc[k]*q[i]
-               QAinde[j,m] = QAinde[j,m] + wpa[j,pos,z]*calc[k]*q[i]
-               QCinde[j,m] = QCinde[j,m] + wpc[j,pos,z]*calc[k]*q[i]
-               IF (j lt 5) THEN QSTinde[j,m] = QSTinde[j,m] + wpst[j,pos,z]*calc[k]*q[i]
+               QAinde[j,m] = QAinde[j,m] + wpa[j,place,z]*calc[k]*q[i]
+               QCinde[j,m] = QCinde[j,m] + wpc[j,place,z]*calc[k]*q[i]
+               IF (j lt 5) THEN QSTinde[j,m] = QSTinde[j,m] + wpst[j,place,z]*calc[k]*q[i]
             ENDFOR
          ENDFOR
       ENDFOR
