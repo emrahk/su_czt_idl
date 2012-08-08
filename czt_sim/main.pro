@@ -46,7 +46,7 @@ ENDIF ELSE BEGIN
    t = intarr(cloudnumb*divcloud)
    dvdcloud = create_struct('xe_actual',dblarr(1000),'ze_actual',dblarr(1000),'te_actual',dblarr(1000))
    dvdcloud = replicate(dvdcloud,cloudnumb*divcloud)
-   index = where (pos[2,*] le 1.,count)
+   index = where (pos[2,*] le 1.1,count)
    IF count eq 0 THEN BEGIN
       FOR i=0,cloudnumb-1 DO BEGIN
          electron_motion,1.,pos[0,i],pos[2,i],efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
@@ -57,6 +57,9 @@ ENDIF ELSE BEGIN
             t[divcloud*i+k]=lene
             FOR j=0,lene DO BEGIN
                dvdcloud[divcloud*i+k].xe_actual[j]=xe_actual[j]+(k-(divcloud-1)/2)*0.005
+               ;should be inside the detector
+               IF dvdcloud[divcloud*i+k].xe_actual[j] gt 19.54 THEN dvdcloud[divcloud*i+k].xe_actual[j] = 19.54
+               IF dvdcloud[divcloud*i+k].xe_actual[j] gt 0 THEN dvdcloud[divcloud*i+k].xe_actual[j] = 0
                dvdcloud[divcloud*i+k].ze_actual[j]=ze_actual[j]
             ENDFOR
          ENDFOR  
@@ -150,12 +153,17 @@ IF NOT keyword_set(divide) THEN BEGIN
       FOR i=0,cloudnumb-1 DO BEGIN
          x=floor(cloud[i].xe_actual[m]/0.005)
          z=floor(cloud[i].ze_actual[m]/0.005)
+         IF x gt 3908 THEN x=3908
          IF z gt 5 THEN q[i] = Qr_e[i]*exp(-timee[m]/taue)
          FOR k=0,divcloud-1 DO BEGIN
+            pos = x+k-(divcloud-1)
+            IF pos gt 3908 THEN pos = 3908
+            IF pos lt 0 THEN pos = 0
             FOR j=0,15 DO BEGIN
-               QAinde[j,m] = QAinde[j,m] + wpa[j,x+k-(divcloud-1),z]*calc[k]*q[i]
-               QCinde[j,m] = QCinde[j,m] + wpc[j,x+2*k-0,z]*calc[k]*q[i]
-               IF (j lt 5) THEN QSTinde[j,m] = QSTinde[j,m] + wpst[j,x+2*k-8,z]*calc[k]*q[i]
+               ;QAinde[j,m] = QAinde[j,m] + wpa[j,x+k-(divcloud-1),z]*calc[k]*q[i]
+               QAinde[j,m] = QAinde[j,m] + wpa[j,pos,z]*calc[k]*q[i]
+               QCinde[j,m] = QCinde[j,m] + wpc[j,pos,z]*calc[k]*q[i]
+               IF (j lt 5) THEN QSTinde[j,m] = QSTinde[j,m] + wpst[j,pos,z]*calc[k]*q[i]
             ENDFOR
          ENDFOR
       ENDFOR
