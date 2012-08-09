@@ -11,7 +11,7 @@ PRO spectrum,data,efx,efz,wpa,wpc,wpst,spe
 ;spe     : struct spe with anode,cathode and steer
  
   index = where(data[0,*] eq 0,count) ;getting indexes of first clouds
-  te = 50 ;charge collection time
+  te = 100
 
   ;define energy array
   anarr = dblarr(16,count)
