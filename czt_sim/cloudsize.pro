@@ -18,7 +18,7 @@ PRO cloudsize,sigma,time,T=vT,edep=vedep,mob=vmob,isigma=visigma,bg=vbg,eps=veps
 ;--------------------------
 ;OUTPUT
 ;sigma : sigma array with interval 
-;timearr : time array to calculate
+;time : time array to calculate
 
 ;setting optional values
   IF NOT keyword_set(vT) THEN vT=298

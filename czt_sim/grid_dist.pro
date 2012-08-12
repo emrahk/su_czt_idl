@@ -10,10 +10,10 @@
 
 ;function for rieman integral
 FUNCTION integ,x,f,l
-  int=0.01
+  int=0.1
   steps=((l-f)/int)
   result=0
-  sum=dblarr(5)
+  sum=dblarr(2)
   FOR i=0,steps-1 DO BEGIN
      FOR j=0,1 DO sum[j]=(1/(sqrt(2*!pi*x^2)))*exp(-(f+(int*(i+j)))^2/(2*x^2))
      result=result+(sum[0]+sum[1])*int/2
