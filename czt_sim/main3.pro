@@ -147,9 +147,9 @@ FOR m=0,15 DO BEGIN
          qst[m,*] = qst[m,*] + interpol(reform(qsh[i,m,0:fh[i]]),holes[i].tac[0:fh[i]],time)
       ENDIF
       FOR j=0,divcloud-1 DO BEGIN 
-         qa[m,*] = qa[m,*] + interpol(reform(qad[i,m,0:fe[i]+fd[i]]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i]],time)
-         qc[m,*] = qc[m,*] + interpol(reform(qcd[i,m,0:fe[i]+fd[i]]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i]],time)         
-         IF m lt 5 THEN qst[m,*] = qst[m,*] + interpol(reform(qsd[i,m,0:fe[i]+fd[i]]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i]],time)         
+         qa[m,*] = qa[m,*] + interpol(reform(qad[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]],time)
+         qc[m,*] = qc[m,*] + interpol(reform(qcd[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]],time)         
+         IF m lt 5 THEN qst[m,*] = qst[m,*] + interpol(reform(qsd[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]],time)         
       ENDFOR
    ENDFOR
 ENDFOR   
