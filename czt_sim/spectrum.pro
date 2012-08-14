@@ -1,5 +1,5 @@
 ;runs main.pro for all events and get histograms for all events
-PRO spectrum,data,efx,efz,wpa,wpc,wpst,spe,clouddiv=divcloud
+PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,clouddiv=divcloud
   
 ;INPUT
 ;-------------------------------
@@ -40,7 +40,7 @@ PRO spectrum,data,efx,efz,wpa,wpc,wpst,spe,clouddiv=divcloud
   itime = systime(1)
   ;doing the loop for all events
   FOR i=0,count-1 DO BEGIN
-     main2,data,ndata,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst, $
+     main2,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst, $
          qainde,qaindh,qcinde,qcindh,qstinde,qstindh,clouddiv=divcloud,calct=tcal,/div
 
      ;to understand program is working...

@@ -1,4 +1,4 @@
-PRO main2,data,ndata,efx,efz,wpa,wpc,wpst,eventnumb,time,qc,qa,qst, $
+PRO main2,data,event,efx,efz,wpa,wpc,wpst,eventnumb,time,qc,qa,qst, $
           qainde,qaindh,qcinde,qcindh,qstinde,qstindh,clouddiv=divcloud, $
           calct=tcalc,divide=divide,plot=plot
 
@@ -81,7 +81,10 @@ ENDIF ELSE BEGIN
       ENDFOR
 
       FOR i=0,cloudnumb*divcloud-1 DO BEGIN
-         electron_motion,0.,dvdcloud[i].xe_actual[t[i]],1.07,efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
+         ;electron_motion,0.,dvdcloud[i].xe_actual[t[i]],1.07,efx,efz,a,b,c,te_actual,xe_actual,ze_actual,coarsegridpos=[1.025,4.5]
+         xe_actual=event[floor(dvdcloud[i].xe_actual[t[i]]/0.005)].xac[0:event[i].size]
+         ze_actual=event[floor(dvdcloud[i].xe_actual[t[i]]/0.005)].zac[0:event[i].size]
+         te_actual=event[floor(dvdcloud[i].xe_actual[t[i]]/0.005)].tac[0:event[i].size]
          lene = floor(max(te_actual)*1e9/inte)
          xe_actual=interpol(xe_actual,te_actual,timee[0:lene])
          ze_actual=interpol(ze_actual,te_actual,timee[0:lene])
