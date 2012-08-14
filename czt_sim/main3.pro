@@ -31,14 +31,14 @@ FOR i=0,cloudnumb-1 DO BEGIN
    size = n_elements(tac)-1
    fe[i] = size
 
-   IF xac(size) gt 19.54 THEN lastpos = 19.54 ELSE BEGIN 
-      IF xac(size) lt 0 THEN lastpos = 0 ELSE  lastpos = xac(size)
-   ENDELSE
+   lastpos = xac(size)
+   IF xac(size) gt 19.54 THEN lastpos = 19.54 
+   IF xac(size) lt 0 THEN lastpos = 0 
 
    FOR j=0,size DO BEGIN 
-      IF xac[j] gt 19.54 THEN xac[j] = 3908 ELSE BEGIN 
-         IF xac[j] lt 0 THEN xac[j] = 0 ELSE  xac[j]=floor(xac[j]/0.005)
-      ENDELSE
+      xac[j]=floor(xac[j]/0.005)
+      IF xac[j] gt 3908 THEN xac[j] = 3908 
+      IF xac[j] lt 0 THEN xac[j] = 0  
    ENDFOR
 
    zac = floor(zac/0.005)
@@ -50,22 +50,25 @@ FOR i=0,cloudnumb-1 DO BEGIN
       fd[divcloud*i+j] = dsize
 
       FOR k=0,dsize -1 DO BEGIN 
-         IF dxac[k] gt 19.54 THEN dxac[k] = 3908 ELSE BEGIN 
-            IF dxac[k] lt 0 THEN dxac[k] = 0 ELSE  dxac[k]=floor(dxac[k]/0.005)
-         ENDELSE
+         dxac[k]=floor(dxac[k]/0.005)
+         IF dxac[k] gt 3908 THEN dxac[k] = 3908 
+         IF dxac[k] lt 0 THEN dxac[k] = 0  
       ENDFOR
 
       dvdcloud[divcloud*i+j].xac[0:size] = xac + j - (divcloud -1)/2
       index = where ( dvdcloud[divcloud*i+j].xac[0:size] gt 3908 )
-      IF index NE -1 THEN dvdcloud[divcloud*i+j].xac[index] = 3908
+      ;IF index NE -1 THEN dvdcloud[divcloud*i+j].xac[index] = 3908
       index = where ( dvdcloud[divcloud*i+j].xac[0:size] lt 0 )
-      IF index NE -1 THEN dvdcloud[divcloud*i+j].xac[index] = 0
+      ;IF index NE -1 THEN dvdcloud[divcloud*i+j].xac[index] = 0
 
       dvdcloud[divcloud*i+j].zac[0:size] = zac
       dvdcloud[divcloud*i+j].tac[0:size] = tac
       dvdcloud[divcloud*i+j].xac[size+1:size+dsize] = dxac[1:dsize]
       dvdcloud[divcloud*i+j].zac[size+1:size+dsize] = dzac[1:dsize]
       dvdcloud[divcloud*i+j].tac[size+1:size+dsize] = dtac[1:dsize] + tac[size]
+      dvdcloud[divcloud*i+j].xac[size+dsize+1] = dvdcloud[divcloud*i+j].xac[size+dsize]
+      dvdcloud[divcloud*i+j].zac[size+dsize+1] = dvdcloud[divcloud*i+j].zac[size+dsize]
+      dvdcloud[divcloud*i+j].tac[size+dsize+1] = dvdcloud[divcloud*i+j].tac[size+dsize]+0.5e-9
    ENDFOR
 ENDFOR
 
@@ -102,7 +105,7 @@ tauh = 1e-6
 
 FOR i=0,cloudnumb-1 DO BEGIN
    FOR j=0,divcloud-1 DO BEGIN
-      FOR k=0,fe[i]+fd[divcloud*i+j] DO BEGIN
+      FOR k=0,fe[i]+fd[divcloud*i+j]+1 DO BEGIN
          xpos = dvdcloud[divcloud*i+j].xac[k]
          zpos = dvdcloud[divcloud*i+j].zac[k]
          t = dvdcloud[divcloud*i+j].tac[k]
@@ -115,7 +118,7 @@ FOR i=0,cloudnumb-1 DO BEGIN
   ENDFOR
 ENDFOR
 
-
+stop
 FOR i=0,cloudnumb-1 DO BEGIN
    FOR k=0,fh[i] DO BEGIN
       xpos = holes[i].xac[k]
@@ -133,7 +136,7 @@ ENDFOR
 ;indivudual charge is calculated
 a=1001
 
-time = findgen(a)*1e-9
+time = findgen(a)*0.5e-9
 
 qa = dblarr(16,a)
 qc = dblarr(16,a)
@@ -147,9 +150,9 @@ FOR m=0,15 DO BEGIN
          qst[m,*] = qst[m,*] + interpol(reform(qsh[i,m,0:fh[i]]),holes[i].tac[0:fh[i]],time)
       ENDIF
       FOR j=0,divcloud-1 DO BEGIN 
-         qa[m,*] = qa[m,*] + interpol(reform(qad[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]],time)
-         qc[m,*] = qc[m,*] + interpol(reform(qcd[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]],time)         
-         IF m lt 5 THEN qst[m,*] = qst[m,*] + interpol(reform(qsd[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]],time)         
+         qa[m,*] = qa[m,*] + interpol(reform(qad[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]+1]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]+1],time)
+         qc[m,*] = qc[m,*] + interpol(reform(qcd[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]+1]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]+1],time)         
+         IF m lt 5 THEN qst[m,*] = qst[m,*] + interpol(reform(qsd[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]+1]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]+1],time)         
       ENDFOR
    ENDFOR
 ENDFOR   
