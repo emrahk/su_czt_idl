@@ -1,4 +1,4 @@
-PRO main3,data,ndata,efx,efz,wpa,wpc,wpst,eventnumb,time,qc,qa,qst, $
+PRO main3,data,event,efx,efz,wpa,wpc,wpst,eventnumb,time,qc,qa,qst, $
           qainde,qaindh,qcinde,qcindh,qstinde,qstindh,clouddiv=divcloud, $
           calct=tcalc,divide=divide,plot=plot
 
@@ -6,6 +6,17 @@ IF NOT keyword_set(divcloud) THEN divcloud = 1
 
 geteventinfo,data,eventnumb,pos,ener
 cloudnumb = n_elements(ener)
+Qr_e = ener                     ;???????? 2 choosen as bandgap !!!multiply by e
+Qr_h = -ener                    ;???????? 2 choosen as bandgap !!!multiply by e
+
+timee = findgen(1001)*1e-9
+timeh = findgen(1201)*1e-8
+
+time=[timee,timeh[where(timeh gt max(timee))]]
+
+QA = dblarr(16,n_elements(time))
+QC = dblarr(16,n_elements(time))
+QST = dblarr(16,n_elements(time))
 
 IF NOT keyword_set(tcalc) THEN BEGIN
    tcalc = dblarr(divcloud,1000)
@@ -16,145 +27,86 @@ IF NOT keyword_set(tcalc) THEN BEGIN
    ENDFOR
 ENDIF
 
-QE = ener
-QH = -ener
-holes=create_struct('xac',dblarr(1000),'zac',dblarr(1000),'tac',dblarr(1000))
-holes=replicate(holes,cloudnumb)
-dvdcloud=create_struct('xac',dblarr(1000),'zac',dblarr(1000),'tac',dblarr(1000))
-dvdcloud=replicate(dvdcloud,divcloud*cloudnumb)
-fe = dblarr(cloudnumb)
-fh = dblarr(cloudnumb)
-fd = dblarr(cloudnumb*divcloud)
-
 FOR i=0,cloudnumb-1 DO BEGIN
-   electron_motion,1.,pos[0,i],pos[2,i],efx,efz,a,b,c,tac,xac,zac,coarsegridpos=[1.025,4.5]
-   size = n_elements(tac)-1
-   fe[i] = size
-
-   lastpos = xac(size)
-   IF xac(size) gt 19.54 THEN lastpos = 19.54 
-   IF xac(size) lt 0 THEN lastpos = 0 
-
-   FOR j=0,size DO BEGIN 
-      xac[j]=floor(xac[j]/0.005)
-      IF xac[j] gt 3908 THEN xac[j] = 3908 
-      IF xac[j] lt 0 THEN xac[j] = 0  
-   ENDFOR
-
-   zac = floor(zac/0.005)
-   FOR j=0,divcloud-1 DO BEGIN
-      electron_motion,0.,lastpos+(j-(divcloud-1)/2)*0.005,1.075,efx,efz,a,b,c,dtac,dxac,dzac,coarsegridpos=[0.5,4.5]
-      
-      dzac = floor(dzac/0.005)
-      dsize = n_elements(dtac)-1
-      fd[divcloud*i+j] = dsize
-
-      FOR k=0,dsize -1 DO BEGIN 
-         dxac[k]=floor(dxac[k]/0.005)
-         IF dxac[k] gt 3908 THEN dxac[k] = 3908 
-         IF dxac[k] lt 0 THEN dxac[k] = 0  
+   index = where(pos[2,*] lt 0.85)
+   IF index[0] ne -1 THEN BEGIN
+      elec_motion,0., cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
+                  te_actual, xe_actual, ze_actual, QAinde, QCinde, QSTinde, qtinda,qtindc,qtindst,coarsegridpos=[0.75,4.7]     
+      te_actual = te_actual[1:cnt]
+      t=floor(max(te_actual)*1e9)
+      QAinde = Qainde*Qr_e[i]
+      QCinde = QCinde*Qr_e[i]
+      QSTinde = QSTinde*Qr_e[i] 
+      FOR j=0,15 DO BEGIN
+         QA[j,0:t] = QA[j,0:t] + interpol(QAinde[j,1:cnt],te_actual,time[0:t])
+         QC[j,0:t] = QC[j,0:t] + interpol(QCinde[j,1:cnt],te_actual,time[0:t])
+         IF j lt 5 THEN QST[j,0:t] = QST[j,0:t] + interpol(QSTinde[j,1:cnt],te_actual,time[0:t])
+         QA[j,t+1:n_elements(time)-1] = QA[j,t+1:n_elements(time)-1] + QAinde[j,cnt]
+         QC[j,t+1:n_elements(time)-1] = QC[j,t+1:n_elements(time)-1] + QAinde[j,cnt]
+         IF j lt 5 THEN QST[j,t+1:n_elements(time)-1] = QST[j,t+1:n_elements(time)-1] + QAinde[j,cnt]
       ENDFOR
-
-      dvdcloud[divcloud*i+j].xac[0:size] = xac + j - (divcloud -1)/2
-      index = where ( dvdcloud[divcloud*i+j].xac[0:size] gt 3908 )
-      ;IF index NE -1 THEN dvdcloud[divcloud*i+j].xac[index] = 3908
-      index = where ( dvdcloud[divcloud*i+j].xac[0:size] lt 0 )
-      ;IF index NE -1 THEN dvdcloud[divcloud*i+j].xac[index] = 0
-
-      dvdcloud[divcloud*i+j].zac[0:size] = zac
-      dvdcloud[divcloud*i+j].tac[0:size] = tac
-      dvdcloud[divcloud*i+j].xac[size+1:size+dsize] = dxac[1:dsize]
-      dvdcloud[divcloud*i+j].zac[size+1:size+dsize] = dzac[1:dsize]
-      dvdcloud[divcloud*i+j].tac[size+1:size+dsize] = dtac[1:dsize] + tac[size]
-      dvdcloud[divcloud*i+j].xac[size+dsize+1] = dvdcloud[divcloud*i+j].xac[size+dsize]
-      dvdcloud[divcloud*i+j].zac[size+dsize+1] = dvdcloud[divcloud*i+j].zac[size+dsize]
-      dvdcloud[divcloud*i+j].tac[size+dsize+1] = dvdcloud[divcloud*i+j].tac[size+dsize]+0.5e-9
+   ENDIF ELSE BEGIN
+       elec_motion,0.75, cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
+                  te_actual, xe_actual, ze_actual, QAinde, QCinde, QSTinde, qtinda,qtindc,qtindst,restq,coarsegridpos=[0.75,4.7]
+       xpos = round(xe_actual[cnt]/0.005)
+       IF xpos gt 3908 THEN xpos = 3908
+       IF xpos lt 0 THEN xpos = 0
+       cnt2 = event[xpos].size-1
+       te_actual = [te_actual[1:cnt],event[xpos].tac[1:cnt2]+te_actual[cnt]]
+       xe_actual = [xe_actual[1:cnt],event[xpos].xac[1:cnt2]]
+       ze_actual = [ze_actual[1:cnt],event[xpos].zac[1:cnt2]]
+       t=floor(max(te_actual)*1e9)
+       Qainde2 = dblarr(16,cnt+cnt2+1)
+       Qcinde2 = dblarr(16,cnt+cnt2+1)
+       Qstinde2 = dblarr(5,cnt+cnt2+1)
+       FOR a=0,15 DO BEGIN 
+          first = Qainde[a,1:cnt]*Qr_e[i]
+          second = Qr_e[i]*restq*(event[xpos].wa[a,1:cnt2]+qtinda[a])
+          QAinde2[a,1:cnt] = first
+          Qainde2[a,cnt+1:cnt+cnt2] = second
+          first = Qcinde[a,1:cnt]*Qr_e[i]
+          second = Qr_e[i]*restq*(event[xpos].wc[a,1:cnt2]+qtindc[a])
+          QCinde2[a,1:cnt] = first
+          QCinde2[a,cnt+1:cnt+cnt2] = second
+          IF a lt 5 THEN BEGIN 
+             first = Qstinde[a,1:cnt]*Qr_e[i]
+             second = Qr_e[i]*restq*(event[xpos].wa[a,1:cnt2]+qtindst[a])
+             Qstinde2[a,1:cnt] = first
+             Qstinde2[a,cnt+1:cnt+cnt2] = second
+          ENDIF
+       ENDFOR
+       ;stop
+       FOR j=0,15 DO BEGIN
+         QA[j,0:t] = QA[j,0:t] + interpol(QAinde2[j,1:cnt+cnt2],te_actual,time[0:t])
+         QC[j,0:t] = QC[j,0:t] + interpol(QCinde2[j,1:cnt+cnt2],te_actual,time[0:t])
+         IF j lt 5 THEN QST[j,0:t] = QST[j,0:t] + interpol(QSTinde2[j,1:cnt+cnt2],te_actual,time[0:t])
+         QA[j,t+1:n_elements(time)-1] = QA[j,t+1:n_elements(time)-1] + QAinde2[j,cnt+cnt2]
+         QC[j,t+1:n_elements(time)-1] = QC[j,t+1:n_elements(time)-1] + Qcinde2[j,cnt+cnt2]
+         IF j lt 5 THEN QST[j,t+1:n_elements(time)-1] = QST[j,t+1:n_elements(time)-1] + QStinde2[j,cnt+cnt2]
+      ENDFOR
+       ;stop
+   ENDELSE
+   IF keyword_set(plot) THEN trajectory,xe_actual,ze_actual,i
+   hol_motion, cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
+               th_actual, xh_actual, zh_actual, QAindh, QCindh, QSTindh, coarsegridpos=[0.75,4.7]     
+   cnt = cnt -1
+   th_actual = th_actual[1:cnt]
+   t=floor(max(th_actual-1e-6)*1e8)+1000
+   if t gt 1800 then t = 1800
+   QAindh = Qaindh*Qr_e[i]
+   QCindh = QCindh*Qr_e[i]
+   QSTindh = QSTindh*Qr_e[i]
+   FOR j=0,15 DO BEGIN
+      QA[j,0:t] = QA[j,0:t] + interpol(QAindh[j,1:cnt],th_actual,time[0:t])
+      QC[j,0:t] = QC[j,0:t] + interpol(QCindh[j,1:cnt],th_actual,time[0:t])
+      IF j lt 5 THEN QST[j,0:t] = QST[j,0:t] + interpol(QSTindh[j,1:cnt],th_actual,time[0:t])
+      QA[j,t+1:n_elements(time)-1] = QA[j,t+1:n_elements(time)-1] + QAindh[j,cnt]
+      QC[j,t+1:n_elements(time)-1] = QC[j,t+1:n_elements(time)-1] + QCindh[j,cnt]
+      IF j lt 5 THEN QST[j,t+1:n_elements(time)-1] = QST[j,t+1:n_elements(time)-1] + QSTindh[j,cnt]
    ENDFOR
+    IF keyword_set(plot) THEN trajectory,xh_actual,zh_actual,1,/hole
 ENDFOR
 
-FOR i=0,cloudnumb-1 DO BEGIN
-
-   hole_motion,pos[0,i],pos[2,i],efx,efz,a,b,c,tac,xac,zac,coarsegridpos=[1.025,4.5]
-   zac = floor(zac/0.005)
-   size = n_elements(tac)-1
-   fh[i] = size
-
-   FOR j=0,size -1 DO BEGIN 
-      IF xac[j] gt 19.54 THEN xac[j] = 3908 ELSE BEGIN 
-         IF xac[j] lt 0 THEN xac[j] = 0 ELSE  xac[j]=floor(xac[j]/0.005)
-      ENDELSE
-   ENDFOR
-
-   holes[i].xac[0:size] = xac
-   holes[i].zac[0:size] = zac
-   holes[i].tac[0:size] = tac
-
-ENDFOR
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;i've get the positions and time
-
-qad = dblarr(cloudnumb*divcloud,16,1000)
-qcd = dblarr(cloudnumb*divcloud,16,1000)
-qsd = dblarr(cloudnumb*divcloud,5,1000)
-qah = dblarr(cloudnumb,16,1000)
-qch = dblarr(cloudnumb,16,1000)
-qsh = dblarr(cloudnumb,5,1000)
-taue = 3e-6
-tauh = 1e-6
-
-FOR i=0,cloudnumb-1 DO BEGIN
-   FOR j=0,divcloud-1 DO BEGIN
-      FOR k=0,fe[i]+fd[divcloud*i+j]+1 DO BEGIN
-         xpos = dvdcloud[divcloud*i+j].xac[k]
-         zpos = dvdcloud[divcloud*i+j].zac[k]
-         t = dvdcloud[divcloud*i+j].tac[k]
-         FOR m=0,15 DO BEGIN
-            qad[divcloud*i+j,m,k] = wpa[m,xpos,zpos]*tcalc[j,floor(t*1e9)]*qe[i]*exp(-t/taue)
-            qcd[divcloud*i+j,m,k] = wpc[m,xpos,zpos]*tcalc[j,floor(t*1e9)]*qe[i]*exp(-t/taue)
-            IF m lt 5 THEN qsd[divcloud*i+j,m,k] = wpst[m,xpos,zpos]*tcalc[j,floor(t*1e9)]*exp(-t/taue)
-         ENDFOR
-      ENDFOR
-  ENDFOR
-ENDFOR
-
-stop
-FOR i=0,cloudnumb-1 DO BEGIN
-   FOR k=0,fh[i] DO BEGIN
-      xpos = holes[i].xac[k]
-      zpos = holes[i].zac[k]
-      t = holes[i].tac[k]
-      FOR m=0,15 DO BEGIN
-         qah[i,m,k] = wpa[m,xpos,zpos]*qh[i]*exp(-t/tauh)
-         qch[i,m,k] = wpc[m,xpos,zpos]*qh[i]*exp(-t/tauh)
-         IF m lt 5 THEN qsh[i,m,k] = wpst[m,xpos,zpos]*qh[i]*exp(-t/tauh)
-      ENDFOR
-  ENDFOR
-ENDFOR
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;indivudual charge is calculated
-a=1001
-
-time = findgen(a)*0.5e-9
-
-qa = dblarr(16,a)
-qc = dblarr(16,a)
-qst = dblarr(5,a)
-
-FOR m=0,15 DO BEGIN
-   FOR i=0,cloudnumb-1 DO BEGIN
-      qa[m,*] = qa[m,*] + interpol(reform(qah[i,m,0:fh[i]]),holes[i].tac[0:fh[i]],time)
-      qc[m,*] = qc[m,*] + interpol(reform(qch[i,m,0:fh[i]]),holes[i].tac[0:fh[i]],time)
-      IF m lt 5 THEN BEGIN
-         qst[m,*] = qst[m,*] + interpol(reform(qsh[i,m,0:fh[i]]),holes[i].tac[0:fh[i]],time)
-      ENDIF
-      FOR j=0,divcloud-1 DO BEGIN 
-         qa[m,*] = qa[m,*] + interpol(reform(qad[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]+1]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]+1],time)
-         qc[m,*] = qc[m,*] + interpol(reform(qcd[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]+1]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]+1],time)         
-         IF m lt 5 THEN qst[m,*] = qst[m,*] + interpol(reform(qsd[i*divcloud+j,m,0:fe[i]+fd[i*divcloud+j]+1]),dvdcloud[divcloud*i+j].tac[0:fe[i]+fd[i*divcloud+j]+1],time)         
-      ENDFOR
-   ENDFOR
-ENDFOR   
+;**********************************************************************************************
 
 END

@@ -1,5 +1,5 @@
 ;runs main.pro for all events and get histograms for all events
-PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,clouddiv=divcloud
+PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,clouddiv=divcloud,vcount=count,verbose=verbose
   
 ;INPUT
 ;-------------------------------
@@ -12,13 +12,14 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,clouddiv=divcloud
 
   IF NOT keyword_set(divcloud) THEN divcloud = 1
 
-  index = where(data[0,*] eq 0,count) ;getting indexes of first clouds
-  te = 100
-
+  IF NOT keyword_set(count) THEN index = where(data[0,*] eq 0,count) ;getting indexes of first clouds
+  te = 1450
+  th = 1450
   ;define energy array
   anarr = dblarr(16,count)
   caarr = dblarr(16,count)
   starr = dblarr(5,count)
+  posarr = dblarr(3,count)
 
   ;gets spectrum array
   anode = dblarr(16,131)
@@ -28,10 +29,10 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,clouddiv=divcloud
   ;count=11
 
   print, 'calculating sigma data...'
-  tcal = dblarr(divcloud,1000)
+  tcal = dblarr(divcloud,1001)
 
   cloudsize,sigma,timearr,ftime=1e-6
-  FOR i=0,999 DO BEGIN 
+  FOR i=0,1000 DO BEGIN 
      grid_dist,sigma[i],divcloud,calc
      tcal[0:divcloud-1,i] = calc
   ENDFOR
@@ -40,30 +41,35 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,clouddiv=divcloud
   itime = systime(1)
   ;doing the loop for all events
   FOR i=0,count-1 DO BEGIN
-     main2,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst, $
+     main3,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst, $
          qainde,qaindh,qcinde,qcindh,qstinde,qstindh,clouddiv=divcloud,calct=tcal,/div
 
-     ;to understand program is working...
-     IF floor((i+1)*100./count) ge perc THEN BEGIN
-        time=create_struct('hour',lonarr(2),'min',lonarr(2),'sec',lonarr(2))
-        pasttime = floor(systime(1)-itime)
-        alltime = floor(pasttime*100/perc)
-        tarr = [pasttime,alltime]
-        time.hour = floor(tarr/3600)
-        tarr = tarr - time.hour*3600
-        time.min = floor(tarr/60)
-        tarr = tarr - time.min*60
-        time.sec = tarr
+     ;geteventinfo,data,i+1,pos,ener
+     ;posarr[0:2,i] = pos[0:2,0]
 
-        print,perc,' %',count-i,' events to go....        '   , $
-              '[',strtrim(time.hour[0],1),':', strtrim(time.min[0],1),':',strtrim(time.sec[0],1),']-->', $
-              '[',strtrim(time.hour[1],1),':', strtrim(time.min[1],1),':',strtrim(time.sec[1],1),']'
-        perc = perc + 1
-     ENDIF
+     ;to understand program is working...
+     if keyword_set(verbose) then begin
+        IF floor((i+1)*100./count) ge perc THEN BEGIN
+           time=create_struct('hour',lonarr(2),'min',lonarr(2),'sec',lonarr(2))
+           pasttime = floor(systime(1)-itime)
+           alltime = floor(pasttime*100/perc)
+           tarr = [pasttime,alltime]
+           time.hour = floor(tarr/3600)
+           tarr = tarr - time.hour*3600
+           time.min = floor(tarr/60)
+           tarr = tarr - time.min*60
+           time.sec = tarr
+           
+           print,perc,' %',count-i,' events to go....        '   , $
+                 '[',strtrim(time.hour[0],1),':', strtrim(time.min[0],1),':',strtrim(time.sec[0],1),']-->', $
+                 '[',strtrim(time.hour[1],1),':', strtrim(time.min[1],1),':',strtrim(time.sec[1],1),']'
+           perc = perc + 1
+        ENDIF
+     endif
 
      ;takes the max of signal between 0 and te
      FOR j=0,15 DO anarr[j,i] = max(qa[j,0:te])
-     FOR j=0,15 DO caarr[j,i] = max(qc[j,0:te])
+     FOR j=0,15 DO caarr[j,i] = max(-qc[j,0:th])
      FOR j=0,4 DO starr[j,i] = max(qst[j,0:te])
      
   ENDFOR

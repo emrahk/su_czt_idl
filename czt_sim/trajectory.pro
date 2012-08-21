@@ -11,7 +11,7 @@ PRO trajectory,xac,zac,i,hole=hole
      window,1,xsize=1200,ysize=300,xpos=0,ypos=400
      plot,xac,zac,yrange=[0.,5.],$
        xtitle='Distance Along Detector(mm)',ytitle='depth(mm)',$
-       xrange=[xac[0]-1.,xac[0]+1.],thick=0.5
+       xrange=[xac[0]-0.5,xac[0]+0.5],thick=0.5
 
                                 ;Define the placement of anodes
      obox,0.62,0,0.92,0.1

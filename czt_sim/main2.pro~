@@ -1,11 +1,11 @@
-PRO main,data,event,efx,efz,wpa,wpc,wpst,eventnumb,time,qc,qa,qst, $
+PRO main2,data,event,efx,efz,wpa,wpc,wpst,eventnumb,time,qc,qa,qst, $
           qainde,qaindh,qcinde,qcindh,qstinde,qstindh,clouddiv=divcloud, $
           calct=tcalc,divide=divide,plot=plot
 
 IF NOT keyword_set(divcloud) THEN divcloud = 1
 
 temax=1000
-thmax=600
+thmax=150
 inte=1
 inth=1
 
@@ -221,36 +221,16 @@ FOR m=0,thmax-1 DO BEGIN
    ENDFOR
 ENDFOR
 
-;qa=dblarr(16,thmax)
-;qc=dblarr(16,thmax)
-;qst=dblarr(5,thmax)
-
-;FOR i=0,15 DO BEGIN
-  ; qa[i,*] = interpol(qainde[i,*],timee,timeh) + qaindh[i,*]
-  ; qc[i,*] = interpol(qcinde[i,*],timee,timeh) + qcindh[i,*]
-  ; IF i lt 5 THEN qst[i,*] = interpol(qstinde[i,*],timee,timeh) + qstindh[i,*]
-;ENDFOR
-
-;time=timeh
-
-time = [timee, timeh[where(timeh gt max(timee))]]
-
-qa=dblarr(16,n_elements(time))
-qc=dblarr(16,n_elements(time))
-qst=dblarr(5,n_elements(time))
+qa=dblarr(16,thmax)
+qc=dblarr(16,thmax)
+qst=dblarr(5,thmax)
 
 FOR i=0,15 DO BEGIN
-   qa[i,0:n_elements(timee)-1] = qainde[i,*] 
-   qa[i,n_elements(timee)-1:n_elements(time)-1] = qainde[i,n_elements(timee)-1]
-   qa[i,*] = qa[i,*] + interpol(qaindh[i,*],timeh,time)
-   qc[i,0:n_elements(timee)-1] = qcinde[i,*] 
-   qc[i,n_elements(timee)-1:n_elements(time)-1] = qcinde[i,n_elements(timee)-1]
-   qc[i,*] = qc[i,*] + interpol(qcindh[i,*],timeh,time)
-   if i lt 5 then begin
-      qst[i,0:n_elements(timee)-1] = qstinde[i,*] 
-      qst[i,n_elements(timee)-1:n_elements(time)-1] = qstinde[i,n_elements(timee)-1]
-      qst[i,*] = qst[i,*] + interpol(qstindh[i,*],timeh,time)
-   endif
+   qa[i,*] = interpol(qainde[i,*],timee,timeh) + qaindh[i,*]
+   qc[i,*] = interpol(qcinde[i,*],timee,timeh) + qcindh[i,*]
+   IF i lt 5 THEN qst[i,*] = interpol(qstinde[i,*],timee,timeh) + qstindh[i,*]
 ENDFOR
+
+time=timeh
 
 END
