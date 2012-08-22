@@ -1,5 +1,5 @@
 ;runs main.pro for all events and get histograms for all events
-PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,clouddiv=divcloud,vcount=count,verbose=verbose
+PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,clouddiv=divcloud,vcount=count,verbose=verbose
   
 ;INPUT
 ;-------------------------------
@@ -13,13 +13,13 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,clouddiv=divc
   IF NOT keyword_set(divcloud) THEN divcloud = 1
 
   IF NOT keyword_set(count) THEN index = where(data[0,*] eq 0,count) ;getting indexes of first clouds
-  te = 1450
+  te = 1000
   th = 1450
+
   ;define energy array
   anarr = dblarr(16,count)
   caarr = dblarr(16,count)
   starr = dblarr(5,count)
-  posarr = dblarr(3,count)
 
   ;gets spectrum array
   anode = dblarr(16,131)
@@ -41,11 +41,7 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,clouddiv=divc
   itime = systime(1)
   ;doing the loop for all events
   FOR i=0,count-1 DO BEGIN
-     main3,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst, $
-         qainde,qaindh,qcinde,qcindh,qstinde,qstindh,clouddiv=divcloud,calct=tcal,/div
-
-     ;geteventinfo,data,i+1,pos,ener
-     ;posarr[0:2,i] = pos[0:2,0]
+     main3,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst
 
      ;to understand program is working...
      if keyword_set(verbose) then begin
@@ -73,6 +69,12 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,clouddiv=divc
      FOR j=0,4 DO starr[j,i] = max(qst[j,0:te])
      
   ENDFOR
+
+  ;new rena output
+  evlist = dblarr (36,count)
+  evlist[1:16,*] = caarr
+  evlist[17:32,*] = anarr
+  evlist[33:35,*] = starr[1:3,*]
 
   ;writing results to histograms
   FOR i=0,15 DO anode[i,0:130] = histogram(anarr[i,0:count-1],min=0,max=130)
