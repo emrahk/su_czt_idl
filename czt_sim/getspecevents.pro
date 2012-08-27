@@ -13,8 +13,8 @@ PRO getspecevents,data,outdata,vmaxnum=maxnum,vxrange=xrange,vyrange=yrange,vzra
   ;verbose : alerts when program finds an event
   
   if Not keyword_set(maxnum) then maxnum = 100
-  if Not keyword_set(xrange) then xrange = [0.,19.54.]
-  if Not keyword_set(yrange) then yrange = [0.,19.54.]
+  if Not keyword_set(xrange) then xrange = [0.,19.54]
+  if Not keyword_set(yrange) then yrange = [0.,19.54]
   if Not keyword_set(zrange) then zrange = [0.,5.]
   if Not keyword_set(enrange) then enrange = [121.,123.]
   cntr = 0

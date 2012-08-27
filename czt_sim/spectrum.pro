@@ -41,7 +41,7 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,cloudd
   itime = systime(1)
   ;doing the loop for all events
   FOR i=0,count-1 DO BEGIN
-     main3,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst
+     main4,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst
 
      ;to understand program is working...
      if keyword_set(verbose) then begin

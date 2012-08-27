@@ -5,7 +5,7 @@ event=replicate(event,3909)
 
 FOR i=0,3908 DO BEGIN
   elec_motion,0.,cnt,i*0.005,0.75,efx,efz,wpa,wpc,wpst,t,x,z,qaind,qcind,qstind,coarsegridpos=[1.1,4]
-  asize = n_elements(t)
+  asize = n_elements(t)-1
   event[i].xac[0:asize-1] = x[1:asize]
   event[i].zac[0:asize-1] = z[1:asize]
   event[i].tac[0:asize-1] = t[1:asize]

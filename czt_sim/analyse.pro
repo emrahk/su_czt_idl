@@ -2,7 +2,8 @@
 ;to visualise posxz and evlist datas
 ;------------------------------------------------------------------------
 
-PRO analyse,posxz,evlist,rangex=rx,rangez=rz,grange=gry,gthick=gth,cathodeno=catno,anodeno=andno,steerno=stno,symbol=sym,option=vopt
+PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=gth,cathodeno=catno, $
+            anodeno=andno,anthr=an_thr,steerno=stno,symbol=sym,option=vopt,help=help
   
 ;------------------------------------------------------------------------
 ;Yiğit Dallılar 22.08.2012
@@ -20,38 +21,59 @@ PRO analyse,posxz,evlist,rangex=rx,rangez=rz,grange=gry,gthick=gth,cathodeno=cat
 ;gthick     :  thickness for the plotting symbol
 ;option     :  options for the program
 ;     *use positions as parameter : 
-;       - 0 :  cathode energies with respect to z
-;       - 1 :  anode energies with respect to z
-;       - 2 :  anode energies with respect to x
-;       - 3 :  anode/cathode ratio with respect to z
-;       - 4 :  cathode/anode ratio with respect to z
-;       - 5 :  steering electrode energies with respect to z
-;       - 6 :  steering electrode energies with respect to x
+;       - 0  :  cathode energies with respect to z
+;       - 1  :  anode energies with respect to z
+;       - 2  :  anode energies with respect to x
+;       - 3  :  anode/cathode ratio with respect to z
+;       - 4  :  cathode/anode ratio with respect to z
+;       - 5  :  steering electrode energies with respect to z
+;       - 6  :  steering electrode energies with respect to x
 ;     *use energies as parameter :
-;       - 7 :  specified anode energy vs. previous neighbour anode energy
-;       - 8 :  specified anode energy vs. specified cathode energy
-;       - 9 :  specifide anode energy vs. specified steering electrode energy
-;       - 10:  specified steering energy vs. specified cathode energy
+;       - 10 :  specified anode energy vs. previous neighbour anode energy
+;       - 11 :  specified anode energy vs. specified cathode energy
+;       - 12 :  specifide anode energy vs. specified steering electrode energy
+;       - 13 :  specified steering energy vs. specified cathode energy
+;       - 14 :  max anode energy vs. specified cathode energy
+;       - 15 :  specified cathode energy vs. anode ratio 
+;     *plot energy spectrums :
+;       - 20 :  for specified anode
+;       - 21 :  for specified cathode
+;       - 22 :  for specified steering electrode
+;       - 23 :  max anode energy
+;       - 24 ;  summed neighbour anodes
 ;------------------------------------------------------------------------
 ;NOTES 
 ;-just to remember for evlist : 1,16 cathodes / 17,32 anodes / 33,35 steering..
 ;-option 2 and 6 can give an idea about the positions of electrodes 
 ;------------------------------------------------------------------------
+;IMPORTANT UPDATES
+;*24.08.2012:
+;-anode threshold added. Choses events which are greater than
+;threshold value.(the idea is to exclude clean steering electrode events.)
+;------------------------------------------------------------------------
 
   if not keyword_set(rx) then rx = [0.,19.54]
   if not keyword_set(rz) then rz = [0.,5.]
+  if not keyword_set(ren) then ren = [0.,150.]
   if not keyword_set(gth) then gth = 1
   if not keyword_set(catno) then catno = 11
   if not keyword_set(andno) then andno = 10
   if not keyword_set(stno) then stno = 2
   if not keyword_set(sym) then sym = 3
   if not keyword_set(vopt) then vopt = 0
+  if not keyword_set(an_thr) then an_thr = 0
+
+  if keyword_set(help) then begin
+     readfw,'analyse.txt'
+  endif else begin
 
   ;for anode no 
   andno = andno + 16
   stno = stno + 32
 
-  index = where (posxz[0,*] gt rx[0] and posxz[0,*] lt rx[1] and posxz[1,*] gt rz[0] and posxz[1,*] lt rz[1])  
+  index = where (posxz[0,*] gt rx[0] and posxz[0,*] lt rx[1] and posxz[1,*] gt rz[0] and posxz[1,*] lt rz[1] and evlist[andno,*] gt an_thr and $
+                 ener gt ren[0] and ener lt ren[1])  
+
   xx = posxz[0,index]
   zz = posxz[1,index]
 
@@ -134,7 +156,7 @@ PRO analyse,posxz,evlist,rangex=rx,rangez=rz,grange=gry,gthick=gth,cathodeno=cat
            endelse
         end
 
-         7 : begin
+         10 : begin
            if keyword_set(gry) then begin
               plot,evlist[andno,index],evlist[andno-1,index],psym=sym,yrange=gry,thick=gth, $
                    ytitle='anode'+strtrim(andno-17,1)+' (keV)',xtitle='anode'+strtrim(andno-16,1)+' (keV)'
@@ -144,7 +166,7 @@ PRO analyse,posxz,evlist,rangex=rx,rangez=rz,grange=gry,gthick=gth,cathodeno=cat
            endelse
         end
 
-         8 : begin
+        11 : begin
            if keyword_set(gry) then begin
               plot,evlist[andno,index],evlist[catno,index],psym=sym,yrange=gry,thick=gth, $
                    ytitle='cathode'+strtrim(catno,1)+' (keV)',xtitle='anode'+strtrim(andno-16,1)+' (keV)'
@@ -154,7 +176,7 @@ PRO analyse,posxz,evlist,rangex=rx,rangez=rz,grange=gry,gthick=gth,cathodeno=cat
            endelse
         end
 
-         9 : begin
+         12 : begin
            if keyword_set(gry) then begin
               plot,evlist[andno,index],evlist[stno,index],psym=sym,yrange=gry,thick=gth, $
                    ytitle='steer'+strtrim(stno-32,1)+' (keV)',xtitle='anode'+strtrim(andno-16,1)+' (keV)'
@@ -164,7 +186,7 @@ PRO analyse,posxz,evlist,rangex=rx,rangez=rz,grange=gry,gthick=gth,cathodeno=cat
            endelse
         end
 
-         10 : begin
+         13 : begin
            if keyword_set(gry) then begin
               plot,evlist[stno,index],evlist[catno,index],psym=sym,yrange=gry,thick=gth, $
                    ytitle='cathode'+strtrim(catno,1)+' (keV)',xtitle='steer'+strtrim(stno,1)+' (keV)'
@@ -174,8 +196,96 @@ PRO analyse,posxz,evlist,rangex=rx,rangez=rz,grange=gry,gthick=gth,cathodeno=cat
            endelse
         end
 
+         14 : begin 
+            size = n_elements(index)-1
+            anener = dblarr(size+1)
+            for i = 0, size do begin
+               anener[i] = max(evlist[17:32,index[i]])
+            endfor
+            if keyword_set(gry) then begin
+               plot,anener,evlist[catno,index],psym=sym,yrange=gry,thick=gth, $
+                    ytitle='cathode'+strtrim(catno,1)+' (keV)',xtitle='max anode energy (keV)'
+            endif else begin
+               plot,anener,evlist[catno,index],psym=sym,thick=gth, $
+                    ytitle='cathode'+strtrim(catno,1)+' (keV)',xtitle='max anode energy (keV)'
+            endelse
+         end
+         
+         15 : begin
+            if keyword_set(gry) then begin
+               plot,evlist[catno,index],evlist[andno,index],psym=sym,yrange=gry,thick=gth, $
+                    ytitle='anode'+strtrim(andno-16,1)+'/cathode'+strtrim(catno,1)+' ratio',xtitle='anode'+strtrim(andno-16,1)+' (keV)'
+            endif else begin
+               plot,evlist[catno,index],evlist[andno,index],psym=sym,thick=gth, $
+                   ytitle='anode'+strtrim(andno-16,1)+'/cathode'+strtrim(catno,1)+' ratio',xtitle='anode'+strtrim(andno-16,1)+' (keV)'
+            endelse
+         end
+         
+         20 : begin 
+            spe = histogram(evlist[andno,index],min=0,max=130)
+            if keyword_set(gry) then begin
+               plot,spe,psym=10,yrange=gry, $
+                    ytitle='count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
+            endif else begin
+               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+                    ytitle='count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
+            endelse
+         end
+
+         21 : begin 
+            spe = histogram(evlist[catno,index],min=0,max=130)
+            if keyword_set(gry) then begin
+               plot,spe,psym=10,yrange=gry, $
+                    ytitle='count for cathode'+strtrim(catno,1),xtitle='energy (keV)'
+            endif else begin
+               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+                    ytitle='count for cathode'+strtrim(catno-16,1),xtitle='energy (keV)'
+            endelse
+         end
+         
+         22 : begin 
+            spe = histogram(evlist[stno,index],min=0,max=130)
+            if keyword_set(gry) then begin
+               plot,spe,psym=10,yrange=gry, $
+                    ytitle='count for steer'+strtrim(stno-32,1),xtitle='energy (keV)'
+            endif else begin
+               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+                    ytitle='count for steer'+strtrim(stno-32,1),xtitle='energy (keV)'
+            endelse
+         end
+         
+         23 : begin 
+            spe = histogram(evlist[andno,index]+evlist[andno-1,index]+evlist[andno+1,index],min=0,max=150)
+            if keyword_set(gry) then begin
+               plot,spe,psym=10,yrange=gry, $
+                    ytitle='neigbour added count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
+            endif else begin
+               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+                    ytitle='neigbour added count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
+            endelse
+         end
+
+
+         24 : begin
+            size = n_elements(index)-1
+            anener = dblarr(size+1)
+            for i = 0, size do begin
+               anener[i] = max(evlist[17:32,index[i]])
+            endfor
+            spe = histogram(anener,min=0,max=130)
+            if keyword_set(gry) then begin
+               plot,spe,psym=10,yrange=gry, $
+                    ytitle='count',xtitle='max energy (keV)'
+            endif else begin
+               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+                    ytitle='count',xtitle='max energy (keV)'
+            endelse
+         end
+
      endcase
 
   endfor
-       
+
+  endelse
+  
 END

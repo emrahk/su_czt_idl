@@ -112,6 +112,8 @@ QA_ind_h  = dblarr(16,1000)        ; Initial induced Charge on the anode site
 QC_ind_h  = dblarr(16,1000)       ; Initial induced Charge on the cathode site
 QST_ind_h = dblarr(5,1000)         ; Initial induced Charge on the steering electodes
 
+dist=0
+
 For i=0,15 DO BEGIN
    QA_ind_h[cnt]  = Qr_h*WP_Ano[i,x,z] ; Initial induced Charge on the anode site
    QC_ind_h[cnt]  = Qr_h*WP_Cath[i,2555,z] ; Initial induced Charge on the cathode site
@@ -143,8 +145,12 @@ xhv = xhv + Dxh
 L = Sqrt(Dxh^2+gz^2)
 L_h = (tauh*mobh)*sqrt(Efieldx[x,z]^2+Efieldz[x,z]^2)  ; Le is the minority carrier diffusion length.
 
-QT_h[x,z] = Qr_h*(1.-Exp(-L/L_h))    ; Trapped charge along the field lines
-Qr_h      = Qr_h*Exp(-L/L_h)         ; Remaining induced charge after trapping
+;QT_h[x,z] = Qr_h*(1.-Exp(-L/L_h))    ; Trapped charge along the field lines
+;Qr_h      = Qr_h*Exp(-L/L_h)         ; Remaining induced charge after trapping
+
+dist = dist + sqrt(dxh^2+gz^2)
+QT_h[x,z] = Qr_h-Exp(-dist/L_h)
+Qr_h      = Exp(-dist/L_h)        
 
 FOR i=0,15 DO BEGIN
    QTindA[i]=QTindA[i]+(QT_h[x,z]*WP_Ano[i,x,z]) ;this is an approximation that may be problematic for large x movements

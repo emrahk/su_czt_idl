@@ -84,16 +84,16 @@ FOR i=0,cloudnumb-1 DO BEGIN
        FOR a=0,15 DO BEGIN 
           ;can not combine first and second so it becomes 4 ligne work
           first = Qainde[a,1:cnt]*Qr_e[i]
-          second = Qr_e[i]*restq*(event[xpos].wa[a,1:cnt2]+qtinda[a])
+          second = Qr_e[i]*(event[xpos].wa[a,1:cnt2]*restq+qtinda[a])
           QAinde2[a,1:cnt] = first
           Qainde2[a,cnt+1:cnt+cnt2] = second
           first = Qcinde[a,1:cnt]*Qr_e[i]
-          second = Qr_e[i]*restq*(event[xpos].wc[a,1:cnt2]+qtindc[a])
+          second = Qr_e[i]*(event[xpos].wc[a,1:cnt2]*restq+qtindc[a])
           QCinde2[a,1:cnt] = first
           QCinde2[a,cnt+1:cnt+cnt2] = second
           IF a lt 5 THEN BEGIN 
              first = Qstinde[a,1:cnt]*Qr_e[i]
-             second = Qr_e[i]*restq*(event[xpos].wst[a,1:cnt2]+qtindst[a])
+             second = Qr_e[i]*(event[xpos].wst[a,1:cnt2]*restq+qtindst[a])
              Qstinde2[a,1:cnt] = first
              Qstinde2[a,cnt+1:cnt+cnt2] = second
           ENDIF

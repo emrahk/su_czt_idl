@@ -14,7 +14,7 @@ Qr_e = ener                     ;???????? 2 choosen as bandgap !!!multiply by e
 Qr_h = -ener                    ;???????? 2 choosen as bandgap !!!multiply by e
 
 timee = findgen(1001)*1e-9
-timeh = findgen(901)*1e-8
+timeh = findgen(1001)*1e-8
 
 time=[timee,timeh[where(timeh gt max(timee))]]
 
@@ -45,8 +45,8 @@ FOR i=0,cloudnumb-1 DO BEGIN
       IF j lt 5 THEN QST[j,0:t] = QST[j,0:t] + interpol(QSTinde[j,1:cnt],te_actual,time[0:t])
       FOR k =t+1,n_elements(time)-1 DO BEGIN
          QA[j,k] = QA[j,k] + QAinde[j,cnt]
-         QC[j,k] = QC[j,k] + QAinde[j,cnt]
-         IF j lt 5 THEN QST[j,k] = QST[j,k] + QAinde[j,cnt]
+         QC[j,k] = QC[j,k] + QCinde[j,cnt]
+         IF j lt 5 THEN QST[j,k] = QST[j,k] + QSTinde[j,cnt]
       ENDFOR
    ENDFOR
    ;stop
