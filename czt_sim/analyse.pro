@@ -3,7 +3,7 @@
 ;------------------------------------------------------------------------
 
 PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=gth,cathodeno=catno, $
-            anodeno=andno,anthr=an_thr,steerno=stno,symbol=sym,option=vopt,help=help
+            anodeno=andno,anthr=an_thr,steerno=stno,symbol=sym,option=vopt,help=help,var=cvar
   
 ;------------------------------------------------------------------------
 ;Yiğit Dallılar 22.08.2012
@@ -20,6 +20,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
 ;symbol     :  symbol for the plot procedure
 ;gthick     :  thickness for the plotting symbol
 ;option     :  options for the program
+;cvar       :  variables  for depth correction formula
 ;     *use positions as parameter : 
 ;       - 0  :  cathode energies with respect to z
 ;       - 1  :  anode energies with respect to z
@@ -40,7 +41,9 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
 ;       - 21 :  for specified cathode
 ;       - 22 :  for specified steering electrode
 ;       - 23 :  max anode energy
-;       - 24 ;  summed neighbour anodes
+;       - 24 :  summed neighbour anodes
+;     *depth corrected spectrum
+;       - 30 :  for specified anode
 ;------------------------------------------------------------------------
 ;NOTES 
 ;-just to remember for evlist : 1,16 cathodes / 17,32 anodes / 33,35 steering..
@@ -62,6 +65,10 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
   if not keyword_set(sym) then sym = 3
   if not keyword_set(vopt) then vopt = 0
   if not keyword_set(an_thr) then an_thr = 0
+  if not keyword_set(cvar) then begin
+     readvariables,'variables.txt',cvar
+     cvar = reform (cvar[andno-1,*])
+  endif
 
   if keyword_set(help) then begin
      readfw,'analyse.txt'
@@ -222,7 +229,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
          end
          
          20 : begin 
-            spe = histogram(evlist[andno,index],min=0,max=130)
+            spe = histogram(evlist[andno,index]*2,min=0,max=260)
             if keyword_set(gry) then begin
                plot,spe,psym=10,yrange=gry, $
                     ytitle='count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
@@ -233,7 +240,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
          end
 
          21 : begin 
-            spe = histogram(evlist[catno,index],min=0,max=130)
+            spe = histogram(evlist[catno,index]*2,min=0,max=260)
             if keyword_set(gry) then begin
                plot,spe,psym=10,yrange=gry, $
                     ytitle='count for cathode'+strtrim(catno,1),xtitle='energy (keV)'
@@ -244,7 +251,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
          end
          
          22 : begin 
-            spe = histogram(evlist[stno,index],min=0,max=130)
+            spe = histogram(evlist[stno,index]*2,min=0,max=260)
             if keyword_set(gry) then begin
                plot,spe,psym=10,yrange=gry, $
                     ytitle='count for steer'+strtrim(stno-32,1),xtitle='energy (keV)'
@@ -255,7 +262,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
          end
          
          23 : begin 
-            spe = histogram(evlist[andno,index]+evlist[andno-1,index]+evlist[andno+1,index],min=0,max=150)
+            spe = histogram((evlist[andno,index]+evlist[andno-1,index]+evlist[andno+1,index])*2,min=0,max=300)
             if keyword_set(gry) then begin
                plot,spe,psym=10,yrange=gry, $
                     ytitle='neigbour added count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
@@ -265,20 +272,32 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
             endelse
          end
 
-
          24 : begin
             size = n_elements(index)-1
             anener = dblarr(size+1)
             for i = 0, size do begin
                anener[i] = max(evlist[17:32,index[i]])
             endfor
-            spe = histogram(anener,min=0,max=130)
+            spe = histogram(anener*2,min=0,max=260)
             if keyword_set(gry) then begin
                plot,spe,psym=10,yrange=gry, $
                     ytitle='count',xtitle='max energy (keV)'
             endif else begin
                plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
                     ytitle='count',xtitle='max energy (keV)'
+            endelse
+         end
+
+         30 : begin
+            aa = evlist[andno,index] - (-cvar[0]/evlist[catno,index]+cvar[1])*exp(-evlist[catno,index]^cvar[2]/cvar[3])
+            aa = aa * cvar[4]
+            spe = histogram (aa*2,min=0,max=300)
+            if keyword_set(gry) then begin
+               plot,spe,psym=10,yrange=gry, $
+                    ytitle='count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
+            endif else begin
+               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+                    ytitle='count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
             endelse
          end
 
