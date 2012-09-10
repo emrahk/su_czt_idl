@@ -234,7 +234,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
                plot,spe,psym=10,yrange=gry, $
                     ytitle='count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
             endif else begin
-               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+               plot,spe,psym=10,yrange=[0,max(spe[20:260])*1.2], $
                     ytitle='count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
             endelse
          end
@@ -245,7 +245,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
                plot,spe,psym=10,yrange=gry, $
                     ytitle='count for cathode'+strtrim(catno,1),xtitle='energy (keV)'
             endif else begin
-               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+               plot,spe,psym=10,yrange=[0,max(spe[20:260])*1.2], $
                     ytitle='count for cathode'+strtrim(catno-16,1),xtitle='energy (keV)'
             endelse
          end
@@ -256,7 +256,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
                plot,spe,psym=10,yrange=gry, $
                     ytitle='count for steer'+strtrim(stno-32,1),xtitle='energy (keV)'
             endif else begin
-               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+               plot,spe,psym=10,yrange=[0,max(spe[20:260])*1.2], $
                     ytitle='count for steer'+strtrim(stno-32,1),xtitle='energy (keV)'
             endelse
          end
@@ -267,7 +267,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
                plot,spe,psym=10,yrange=gry, $
                     ytitle='neigbour added count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
             endif else begin
-               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+               plot,spe,psym=10,yrange=[0,max(spe[20:300])*1.2], $
                     ytitle='neigbour added count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
             endelse
          end
@@ -283,7 +283,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
                plot,spe,psym=10,yrange=gry, $
                     ytitle='count',xtitle='max energy (keV)'
             endif else begin
-               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+               plot,spe,psym=10,yrange=[0,max(spe[20:260])*1.2], $
                     ytitle='count',xtitle='max energy (keV)'
             endelse
          end
@@ -296,7 +296,7 @@ PRO analyse,posxz,ener,evlist,rangex=rx,rangez=rz,grange=gry,enrange=ren,gthick=
                plot,spe,psym=10,yrange=gry, $
                     ytitle='count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
             endif else begin
-               plot,spe,psym=10,yrange=[0,max(spe[10:130])*1.2], $
+               plot,spe,psym=10,yrange=[0,max(spe[20:260])*1.2], $
                     ytitle='count for anode'+strtrim(andno-16,1),xtitle='energy (keV)'
             endelse
          end
