@@ -8,7 +8,7 @@ function equation,xx,cvar,const
 
 end 
 
-pro plotmodcurve,andno,const,plot=plot,print=print,var=cvar
+pro plotmodcurve,andno,const,plot=plot,print=print,var=cvar,color=ccol
   
 ;--------------------------------------------------------------------------
 ;Yiğit Dallılar 28.06.2012
@@ -20,7 +20,10 @@ pro plotmodcurve,andno,const,plot=plot,print=print,var=cvar
 ;plot    : plot / oplot
 ;print   : prints cvar
 ;cvar    : optional cvar input
+;ccol    : color of the line as integer
 ;--------------------------------------------------------------------------
+
+andno = andno - 1
 
 if not keyword_set(cvar) then begin 
    readvariables,'variables.txt',cvar
@@ -33,8 +36,13 @@ xx = xx / 5
 
 if keyword_set(print) then print,cvar
 
-if keyword_set(plot) then plot,xx,equation(xx,cvar,const) $
-                               else oplot,xx,equation(xx,cvar,const)
+if not keyword_set(ccol) then begin
+   if keyword_set(plot) then plot,xx,equation(xx,cvar,const) $
+   else oplot,xx,equation(xx,cvar,const)
+endif else begin
+   if keyword_set(plot) then plot,xx,equation(xx,cvar,const),color=ccol $
+   else oplot,xx,equation(xx,cvar,const),color=ccol
+endelse
 
 end
 ;**************************************************************************

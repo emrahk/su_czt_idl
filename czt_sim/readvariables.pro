@@ -1,5 +1,5 @@
 ;*************************************************************************
-;read variables from a file for calibration
+;read variables from a file for depth correction
 ;-------------------------------------------------------------------------
 
 pro readvariables,fname,cvar
@@ -10,7 +10,7 @@ pro readvariables,fname,cvar
 ;INPUT 
 ;fname    :  name of the input file
 ;OUTPUT
-;cvar     :  variables for the calibration equation
+;cvar     :  variables for the depth correction equation
 ;-------------------------------------------------------------------------
   
   openr,1,fname
