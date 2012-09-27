@@ -1,5 +1,5 @@
 ;runs main.pro for all events and get histograms for all events
-PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,clouddiv=divcloud,vcount=count,verbose=verbose
+PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,clouddiv=divcloud,vcount=count,verbose=verbose,timetrap=timetrap,noiselev=levnoise
   
 ;INPUT
 ;-------------------------------
@@ -37,11 +37,26 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,cloudd
      tcal[0:divcloud-1,i] = calc
   ENDFOR
 
+  ;default value for noise level
+  if not keyword_set(levnoise) then levnoise = 0
+
   print,'starts the job...'
   itime = systime(1)
   ;doing the loop for all events
   FOR i=0,count-1 DO BEGIN
-     main4,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst
+     
+     ;timetrap option added...
+     if not keyword_set (timetrap) then begin
+        
+        main4,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst,$
+              noqc,noqa,noqst,noiselev=levnoise
+        
+     endif else begin
+        
+        main4,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst,$
+              noqc,noqa,noqst,,noiselev=levnoise,/timetrap
+
+     endelse
 
      ;to understand program is working...
      if keyword_set(verbose) then begin
@@ -70,7 +85,7 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,cloudd
      
   ENDFOR
 
-  ;new rena output
+  ;output definition for rena output
   evlist = dblarr (36,count)
   evlist[1:16,*] = caarr
   evlist[17:32,*] = anarr

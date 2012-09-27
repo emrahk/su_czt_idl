@@ -1,6 +1,6 @@
 PRO main4,data,event,efx,efz,wpa,wpc,wpst,eventnumb,time,qc,qa,qst, $
-          qainde,qaindh,qcinde,qcindh,qstinde,qstindh,clouddiv=divcloud, $
-          calct=tcalc,divide=divide,plot=plot
+          noqc,noqa,noqst,clouddiv=divcloud,timetrap=timetrap, $
+          calct=tcalc,divide=divide,noiselev=levnoise,plot=plot
 
 IF NOT keyword_set(divcloud) THEN divcloud = 1
 
@@ -20,7 +20,13 @@ time=[timee,timeh[where(timeh gt max(timee))]]
 
 QA = dblarr(16,n_elements(time))
 QC = dblarr(16,n_elements(time))
-QST = dblarr(16,n_elements(time))
+QST = dblarr(5,n_elements(time))
+
+;elctrode signals with noise
+noqa = dblarr(16,n_elements(time))
+noqc = dblarr(16,n_elements(time))
+noqst = dblarr(5,n_elements(time))
+
 
 IF NOT keyword_set(tcalc) THEN BEGIN
    tcalc = dblarr(divcloud,1000)
@@ -32,8 +38,17 @@ IF NOT keyword_set(tcalc) THEN BEGIN
 ENDIF
 
 FOR i=0,cloudnumb-1 DO BEGIN
-   elec_motion,0., cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
-                   te_actual, xe_actual, ze_actual, QAinde, QCinde, QSTinde, coarsegridpos=[0.75,4.7]    
+   ; timetrap option activated for electrons
+   if not keyword_set (timetrap) then begin
+      elec_motion,0., cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
+                  te_actual, xe_actual, ze_actual, QAinde, QCinde, QSTinde,$
+                  coarsegridpos=[0.75,4.7]    
+   endif else begin
+      elec_motion,0., cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
+                  te_actual, xe_actual, ze_actual, QAinde, QCinde, QSTinde,$
+                  coarsegridpos=[0.75,4.7],/timetrap
+   endelse
+
    te_actual = te_actual[1:cnt]
    t=floor(max(te_actual)*1e9)
    QAinde = Qainde*Qr_e[i]
@@ -51,8 +66,17 @@ FOR i=0,cloudnumb-1 DO BEGIN
    ENDFOR
    ;stop
    IF keyword_set(plot) THEN trajectory,xe_actual,ze_actual,i
-   hol_motion, cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
-               th_actual, xh_actual, zh_actual, QAindh, QCindh, QSTindh, coarsegridpos=[0.75,4.7]     
+   ; timetrap option activated by holes
+   if not keyword_set(timetrap) then begin
+      hol_motion, cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
+                  th_actual, xh_actual, zh_actual, QAindh, QCindh, QSTindh,$
+                  coarsegridpos=[0.75,4.7]
+   endif else begin
+      hol_motion, cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
+                  th_actual, xh_actual, zh_actual, QAindh, QCindh, QSTindh,$
+                  coarsegridpos=[0.75,4.7], /timetrap
+   endelse
+   
    cnt=cnt-1
    th_actual = th_actual[1:cnt]
    t=floor(max(th_actual-1e-6)*1e8)+ 1000
@@ -70,7 +94,18 @@ FOR i=0,cloudnumb-1 DO BEGIN
    ENDFOR
     IF keyword_set(plot) THEN trajectory,xh_actual,zh_actual,1,/hole
     ;stop
-ENDFOR
+ ENDFOR
+
+;noise level added...
+if keyword_set(levnoise) then begin
+   for i=0,15 do begin
+      for j=0,n_elements(time)-1 do begin
+         noqa[i,j] = QA[i,j] + levnoise*(randomu(j/5+long(systime(1)))-0.5)
+         noqc[i,j] = QC[i,j] + levnoise*(randomu(j/5+long(systime(1)))-0.5)
+         if i lt 5 then noqst[i,j] = QST[i,j] + levnoise*(randomu(j/5+long(systime(1)))-0.5)
+      endfor
+   endfor
+endif
 
 ;**********************************************************************************************
 

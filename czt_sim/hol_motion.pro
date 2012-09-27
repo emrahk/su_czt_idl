@@ -4,7 +4,7 @@
 pro hol_motion, cnt,xstart, zstart, Efieldx, Efieldz, WP_Ano, WP_Cath, WP_ST,$
  th_actual, xh_actual, zh_actual, QA_ind_h, QC_ind_h, QST_ind_h,$
    ypos = posy, htau=tauh, hmob=mobh, plotout=plotout, plotps=plotps, fname=namef,$
-   verbose=verbose, coarsegridpos=poscoarsegrid
+   verbose=verbose, coarsegridpos=poscoarsegrid,timetrap=timetrap
 
 ;INPUTS
 ;xstart: start position in the x direction in units of mm
@@ -142,15 +142,24 @@ th_actual = [th_actual,t]           ; In order to find in terms of nanosecond, I
 Dxh = mobh*Efieldx[x,z]*Dth           ; Obtain x step
 xhv = xhv + Dxh
 
-L = Sqrt(Dxh^2+gz^2)
-L_h = (tauh*mobh)*sqrt(Efieldx[x,z]^2+Efieldz[x,z]^2)  ; Le is the minority carrier diffusion length.
+if not keyword_set(timetrap) then begin
+   
+   QT_h[x,z] = Qr_h-Exp(-t/tauh)
+   Qr_h = Exp(-t/tauh)        
 
+endif else begin
+
+   L = Sqrt(Dxh^2+gz^2)
+   L_h = (tauh*mobh)*sqrt(Efieldx[x,z]^2+Efieldz[x,z]^2) ; Le is the minority carrier diffusion length.
+   
 ;QT_h[x,z] = Qr_h*(1.-Exp(-L/L_h))    ; Trapped charge along the field lines
 ;Qr_h      = Qr_h*Exp(-L/L_h)         ; Remaining induced charge after trapping
 
-dist = dist + sqrt(dxh^2+gz^2)
-QT_h[x,z] = Qr_h-Exp(-dist/L_h)
-Qr_h      = Exp(-dist/L_h)        
+   dist = dist + sqrt(dxh^2+gz^2)
+   QT_h[x,z] = Qr_h-Exp(-dist/L_h)
+   Qr_h = Exp(-dist/L_h)        
+
+endelse
 
 FOR i=0,15 DO BEGIN
    QTindA[i]=QTindA[i]+(QT_h[x,z]*WP_Ano[i,x,z]) ;this is an approximation that may be problematic for large x movements

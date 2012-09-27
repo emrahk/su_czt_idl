@@ -4,7 +4,7 @@
 pro elec_motion,lastpos, cnt, xstart, zstart, Efieldx, Efieldz, WP_Ano, WP_Cath, WP_ST, $
  te_actual, xe_actual, ze_actual, QA_ind_e, QC_ind_e, QST_ind_e, qtinda,qtindc,qtindst, qr_e, $
    ypos = posy, etau=taue, emob=mobe, plotout=plotout, plotps=plotps, fname=namef,$
-   verbose=verbose, coarsegridpos=poscoarsegrid
+   verbose=verbose, coarsegridpos=poscoarsegrid,timetrap=timetrap
 
 ;INPUTS
 ;xstart: start position in the x direction in mm
@@ -151,15 +151,25 @@ te_actual = [te_actual,t]       ; In order to find in terms of nanosecond, I mul
 Dxe = -mobe*Efieldx[x,z]*Dte    ; Obtain x step, since electron has negative charge, multiplied with -1.
 xev = xev + Dxe                 ;actual x position
 
-L = Sqrt(Dxe^2+gz^2)                                  ;total distance travelled
-L_e = (taue*mobe)*sqrt(Efieldx[x,z]^2+Efieldz[x,z]^2) ; Le is the minority carrier diffusion length.
+;time trapping option added...
+if keyword_set (timetrap) then begin
 
-;QT_e[x,z] = Qr_e*(1.-Exp(-L/L_e)) ; Trapped charge along the field lines
-;Qr_e = Qr_e*Exp(-L/L_e)           ; Remaining induced charge after trapping
+   QT_e[x,z] = Qr_e-Exp(-t/taue)
+   Qr_e = exp(-t/taue)           
 
-dist=dist+sqrt(dxe^2+gz^2)
-QT_e[x,z] = Qr_e-Exp(-dist/L_e)
-Qr_e = exp(-dist/L_e)           
+   endif else begin
+
+   L = Sqrt(Dxe^2+gz^2)                               ;total distance travelled
+   L_e = (taue*mobe)*sqrt(Efieldx[x,z]^2+Efieldz[x,z]^2) ; Le is the minority carrier diffusion length.
+   
+   ;QT_e[x,z] = Qr_e*(1.-Exp(-L/L_e)) ; Trapped charge along the field lines
+   ;Qr_e = Qr_e*Exp(-L/L_e)           ; Remaining induced charge after trapping
+   
+   dist=dist+sqrt(dxe^2+gz^2)
+   QT_e[x,z] = Qr_e-Exp(-dist/L_e)
+   Qr_e = exp(-dist/L_e)           
+
+endelse
 
 FOR i=0,15 DO BEGIN
    QTindA[i]=QTindA[i]+(QT_e[x,z]*WP_Ano[i,x,z])                 ;this is an approximation that may be problematic for large x movements
