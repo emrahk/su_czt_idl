@@ -19,7 +19,7 @@ pro photonshoot,nofphot,mask,maskhit,dethit,photsource=source
 
 
   if not keyword_set(source) then $
-     source=create_struct('radius',6,'theta',0.9*!pi,'phi',0.7*!pi,'pos',[5,0,8])
+     source=create_struct('radius',5,'theta',0.5*!pi,'phi',0.25*!pi,'pos',[0,0,8])
 
 ;variable initialisation
   radius=[1,1,sqrt(randomu(systime(1),nofphot+1))]*(source.radius)
@@ -29,6 +29,7 @@ pro photonshoot,nofphot,mask,maskhit,dethit,photsource=source
   refpos=dblarr(2,3)
   pos=dblarr(nofphot,3)
   maskhit=dblarr(nofphot,2)
+  maskpix=lonarr(nofphot,2)
   dethit=dblarr(nofphot,2)
   denom=dblarr(3)
   detz=-10
@@ -61,8 +62,17 @@ pro photonshoot,nofphot,mask,maskhit,dethit,photsource=source
   for i=0,nofphot-1 do begin
      maskhit[i,0]=-(denom[0]/denom[2])*pos[i,2]+pos[i,0]
      maskhit[i,1]=-(denom[1]/denom[2])*pos[i,2]+pos[i,1]
-     dethit[i,0]=(denom[0]/denom[2])*(-pos[i,2]+detz)+pos[i,0]
-     dethit[i,1]=(denom[1]/denom[2])*(-pos[i,2]+detz)+pos[i,1]
+     maskpix[i,0]=where(maskhit[i,0] le mask.pos[*,0,0]+mask.pixsize*0.5 and $
+                maskhit[i,0] ge mask.pos[*,0,0]-mask.pixsize*0.5)
+     maskpix[i,1]=where(maskhit[i,1] le mask.pos[0,*,1]+mask.pixsize*0.5 and $
+                maskhit[i,1] ge mask.pos[0,*,1]-mask.pixsize*0.5)                
+  endfor
+
+  for i=0,nofphot-1 do begin
+     dethit[i,0]=((denom[0]/denom[2])*(-pos[i,2]+detz)+pos[i,0])* $
+                 mask.apert[maskpix[i,0],maskpix[i,1]]
+     dethit[i,1]=((denom[1]/denom[2])*(-pos[i,2]+detz)+pos[i,1])* $
+                 mask.apert[maskpix[i,0],maskpix[i,1]]
   endfor
 
 end
