@@ -18,8 +18,8 @@ pro photonshoot,nofphot,mask,maskhit,dethit,photsource=source
 ;------------------------------------------------------------------------------
 
 
-  if not keyword_set(source) $
-     source=create_struct('radius',4,'theta',0.7*!pi,'phi',0.5*!pi,'pos',[0,0,8])
+  if not keyword_set(source) then $
+     source=create_struct('radius',6,'theta',0.9*!pi,'phi',0.7*!pi,'pos',[5,0,8])
 
 ;variable initialisation
   radius=[1,1,sqrt(randomu(systime(1),nofphot+1))]*(source.radius)
@@ -35,9 +35,9 @@ pro photonshoot,nofphot,mask,maskhit,dethit,photsource=source
   
 ;calculation of denominators with two reference positions in the circle 
   for i=0,1 do begin
-     refpos[i,0] = xp[i]*cos(source.phi)+yp[i]*sin(source.theta)*sin(source.phi)+ $
+     refpos[i,0] = xp[i]*sin(source.phi)-yp[i]*sin(source.theta)*cos(source.phi)+ $
                    source.pos[0]
-     refpos[i,1] = xp[i]*sin(source.phi)+yp[i]*sin(source.theta)*cos(source.phi)+ $
+     refpos[i,1] = -xp[i]*cos(source.phi)-yp[i]*sin(source.theta)*sin(source.phi)+ $
                    source.pos[1]
      refpos[i,2] = yp[i]*cos(source.theta)+source.pos[2]
   endfor
@@ -50,9 +50,9 @@ pro photonshoot,nofphot,mask,maskhit,dethit,photsource=source
   
 ;cartesian coordinates and denominator calculation
   for i=0,nofphot-1 do begin
-     pos[i,0] = xp[i+2]*cos(source.phi)+yp[i+2]*sin(source.theta)*sin(source.phi)+ $
+     pos[i,0] = xp[i+2]*sin(source.phi)-yp[i+2]*sin(source.theta)*cos(source.phi)+ $
                 source.pos[0]
-     pos[i,1] = xp[i+2]*sin(source.phi)+yp[i+2]*sin(source.theta)*cos(source.phi)+ $
+     pos[i,1] = -xp[i+2]*cos(source.phi)-yp[i+2]*sin(source.theta)*sin(source.phi)+ $
                 source.pos[1]
      pos[i,2] = yp[i+2]*cos(source.theta)+source.pos[2]
   endfor
