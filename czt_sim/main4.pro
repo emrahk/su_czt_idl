@@ -97,12 +97,16 @@ FOR i=0,cloudnumb-1 DO BEGIN
  ENDFOR
 
 ;noise level added...
+levnoise = levnoise * 2
+rand = randomu(systime(1),n_elements(time))
+plot, rand
 if keyword_set(levnoise) then begin
    for i=0,15 do begin
       for j=0,n_elements(time)-1 do begin
-         noqa[i,j] = QA[i,j] + levnoise*(randomu(j/5+long(systime(1)))-0.5)
-         noqc[i,j] = QC[i,j] + levnoise*(randomu(j/5+long(systime(1)))-0.5)
-         if i lt 5 then noqst[i,j] = QST[i,j] + levnoise*(randomu(j/5+long(systime(1)))-0.5)
+         noqa[i,j] = QA[i,j] + levnoise * (rand[j] - 0.5)
+;(randomu(j/5+long(systime(1)))-0.5)
+         noqc[i,j] = QC[i,j] + levnoise * (rand[j] - 0.5)
+         if i lt 5 then noqst[i,j] = QST[i,j] + levnoise * (rand[j] - 0.5)
       endfor
    endfor
 endif
