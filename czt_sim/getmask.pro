@@ -1,13 +1,14 @@
 ;******************************************************************************
 ;gets all the mask aperture function and pixel positions
 ;------------------------------------------------------------------------------
-pro getmask,array,num,mask,pixsize=sizepix
+pro getmask,array,num,mask,pixsize=sizepix,plotmask=plotmask
 ;------------------------------------------------------------------------------
 
   maskarray,array,num,maskarr,pixsize=sizepix
 
   mask=create_struct('apert',bytarr(array[0]*num+1,array[1]*num+1), $
-                    'pos',dblarr(array[0]*num+1,array[1]*num+1,2))
+                    'pos',dblarr(array[0]*num+1,array[1]*num+1,2), $
+                    'pixsize',sizepix)
 
   for i=0,array[0]-1 do begin
      for j=0,array[1]-1 do begin
@@ -28,11 +29,13 @@ pro getmask,array,num,mask,pixsize=sizepix
   mask.pos[array[0]*num,*,1]=mask.pos[array[0]*num-1,*,1]
   mask.pos[*,array[1]*num,0]=mask.pos[*,array[1]*num-1,0]
 
-  for i=0,num*array[0] do begin
-     for j=0,num*array[1] do begin
-        plotmura,mask.apert[i,j],mask.pos[i,j,*],sizepix
+  if keyword_set(plotmask) then begin 
+     for i=0,num*array[0] do begin
+        for j=0,num*array[1] do begin
+           plotmura,mask.apert[i,j],mask.pos[i,j,*],sizepix
+        endfor
      endfor
-  endfor
+  endif
 
 end
 ;******************************************************************************

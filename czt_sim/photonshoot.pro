@@ -2,8 +2,9 @@
 ;creates photons on the source shoots them over the mask and holds
 ;placement data on the detector for the ones who passes the mask
 ;------------------------------------------------------------------------------
-pro photonshoot,nofphot,maskhit,dethit,pixenergy, $
-                osource=source,odetector=detector,omask=mask
+pro photonshoot,nofphot,maskhit,dethit,image,pixenergy,aperture, $
+                osource=source,odetector=detector,omask=mask,maxdelta=deltamax,$
+                contour=contour
 ;------------------------------------------------------------------------------
 
 ;------------------------------------------------------------------------------
@@ -15,23 +16,28 @@ pro photonshoot,nofphot,maskhit,dethit,pixenergy, $
 ;dethit      : detector hit positions
 ;detector    : detector structure
 ;OPTIONAL
+;maxdelta    : maximum delta range on the denominators
 ;osource     : photon source can be added from outside
 ;odetector   : detector can be added from outside
 ;omask       : mask can be added from outside
+;KEYWORD
+;contour     : plot contour of the image
 ;------------------------------------------------------------------------------
 
 ;variable initialisation
   if not keyword_set(source) then $
-     source = create_struct('radius',20,'theta',0.3*!pi,'phi',0.3*!pi, $
-                            'pos',[0,0,10],'energy',1)
+     source = create_struct('radius',100,'theta',0.2*!pi,'phi',-0.2*!pi, $
+                            'pos',[0,0,100],'energy',1)
   if not keyword_set(detector) then $
-     detector=create_struct('z',-10,'pixsize',0.5,'pixenergy',dblarr(200,200))
+     detector=create_struct('z',-5,'pixsize',1,'pixenergy',dblarr(200,200))
   tmp = sqrt(n_elements(detector.pixenergy)) 
   detector=create_struct(detector,'pos',dblarr(tmp,tmp,2))
   if not keyword_set(mask) then getmask,[2,2],73,mask,pixsize=1
+  if not keyword_set(deltamax) then deltamax=0.1
 
   radius=[1,1,sqrt(randomu(systime(1),nofphot+1))]*(source.radius)
   angle=[!pi*0.2,-!pi*0.2,randomu(systime(1)+1,nofphot+1)*2*!pi]
+  delta=(randomu(systime(1)+2,nofphot,3)-0.5)*deltamax
   xp=radius[*]*cos(angle[*])
   yp=radius[*]*sin(angle[*])
   refpos=dblarr(2,3)
@@ -71,8 +77,10 @@ pro photonshoot,nofphot,maskhit,dethit,pixenergy, $
 
 ;mask hit positions and pixels are written z=0
   for i=0,nofphot-1 do begin
-     maskhit[i,0]=-(denom[0]/denom[2])*pos[i,2]+pos[i,0]
-     maskhit[i,1]=-(denom[1]/denom[2])*pos[i,2]+pos[i,1]
+     maskhit[i,0]= $
+        -((denom[0]*(1+delta[i,0]))/(denom[2]*(1+delta[i,2])))*pos[i,2]+pos[i,0]
+     maskhit[i,1]= $
+        -((denom[1]*(1+delta[i,1]))/(denom[2]*(1+delta[i,2])))*pos[i,2]+pos[i,1]
      maskpix[i,0]=where(maskhit[i,0] le mask.pos[*,0,0]+mask.pixsize*0.5 and $
                 maskhit[i,0] ge mask.pos[*,0,0]-mask.pixsize*0.5)
      maskpix[i,1]=where(maskhit[i,1] le mask.pos[0,*,1]+mask.pixsize*0.5 and $
@@ -81,9 +89,11 @@ pro photonshoot,nofphot,maskhit,dethit,pixenergy, $
 
 ;detector hit positions and energy distributed to pixels are calculated
   for i=0,nofphot-1 do begin
-     dethit[i,0]=((denom[0]/denom[2])*(-pos[i,2]+detector.z)+pos[i,0])* $
+     dethit[i,0]=(((denom[0]*(1+delta[i,0]))/(denom[2]*(1+delta[i,2])))* $
+                  (-pos[i,2]+detector.z)+pos[i,0])* $
                  mask.apert[maskpix[i,0],maskpix[i,1]]
-     dethit[i,1]=((denom[1]/denom[2])*(-pos[i,2]+detector.z)+pos[i,1])* $
+     dethit[i,1]=(((denom[1]*(1+delta[i,1]))/(denom[2]*(1+delta[i,2])))* $
+                  (-pos[i,2]+detector.z)+pos[i,1])* $
                  mask.apert[maskpix[i,0],maskpix[i,1]]
      if mask.apert[maskpix[i,0],maskpix[i,1]] gt 0 then begin
         ndx=where(dethit[i,0] le detector.pos[*,0,0]+detector.pixsize*0.5 and $
@@ -96,6 +106,11 @@ pro photonshoot,nofphot,maskhit,dethit,pixenergy, $
 
   ;output value 
   pixenergy=detector.pixenergy
+  aperture=mask.apert
+  image=convol(pixenergy,aperture)
 
+  ;plotting image
+  contour,image,nlevel=100,/fill
+  
 end
 ;******************************************************************************
