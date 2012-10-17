@@ -4,7 +4,7 @@
 ;------------------------------------------------------------------------------
 pro photonshoot,nofphot,maskhit,dethit,image,pixenergy,aperture, $
                 osource=source,odetector=detector,omask=mask,maxdelta=deltamax,$
-                plot=plot
+                plot=plot,intsource=intsource
 ;------------------------------------------------------------------------------
 
 ;------------------------------------------------------------------------------
@@ -26,8 +26,8 @@ pro photonshoot,nofphot,maskhit,dethit,image,pixenergy,aperture, $
 
 ;variable initialisation
   if not keyword_set(source) then $
-     source = create_struct('radius',20,'theta',0.2*!pi,'phi',0.75*!pi, $
-                            'pos',[1000,-1000,1000],'energy',1)
+     source = create_struct('radius',50,'theta',0.3*!pi,'phi',0.75*!pi, $
+                            'pos',[5.5,-5.5,5.5],'energy',1)
   if not keyword_set(detector) then $
      detector=create_struct('z',-10,'pixsize',1,'pixenergy',dblarr(200,200))
   tmp = sqrt(n_elements(detector.pixenergy)) 
@@ -50,22 +50,34 @@ pro photonshoot,nofphot,maskhit,dethit,image,pixenergy,aperture, $
   tarray = (findgen(tmp)-(tmp/2.-0.5))*detector.pixsize
   for i=0,tmp-1 do detector.pos[*,i,0]=tarray
   for i=0,tmp-1 do detector.pos[i,*,1]=tarray
-  
+
+  if keyword_set(intsource) then begin
+     intsource=create_struct('radius',1000,'theta',!pi*0.4,'phi',!pi*0.25)
+     source.pos[0]=intsource.radius*sin(intsource.theta)*cos(intsource.phi)
+     source.pos[1]=intsource.radius*sin(intsource.theta)*sin(intsource.phi)
+     source.pos[2]=intsource.radius*cos(intsource.theta)
+     source.theta=!pi*0.5-intsource.theta
+     source.phi=!pi+intsource.phi
+     denom[0]=source.pos[0]
+     denom[1]=source.pos[1]
+     denom[2]=source.pos[2]
+  endif else begin
 ;calculation of denominators with two reference positions in the circle 
-  for i=0,1 do begin
-     refpos[i,0] = +xp[i]*sin(source.phi)+ $
-                   yp[i]*sin(source.theta)*cos(source.phi)+source.pos[0]
-     refpos[i,1] = -xp[i]*cos(source.phi)+ $
-                   yp[i]*sin(source.theta)*sin(source.phi)+source.pos[1]
-     refpos[i,2] = yp[i]*cos(source.theta)+source.pos[2]
-  endfor
-  denom[2]=(refpos[1,0]-source.pos[0])*(refpos[0,1]-source.pos[1]) $
-           -(refpos[1,1]-source.pos[1])*(refpos[0,0]-source.pos[0])      
-  denom[0]=(refpos[1,1]-source.pos[1])*(refpos[0,2]-source.pos[2]) $
-           -(refpos[1,2]-source.pos[2])*(refpos[0,1]-source.pos[1])
-  denom[1]=(refpos[1,2]-source.pos[2])*(refpos[0,0]-source.pos[0]) $
-           -(refpos[1,0]-source.pos[0])*(refpos[0,2]-source.pos[2])
-  
+     for i=0,1 do begin
+        refpos[i,0] = +xp[i]*sin(source.phi)+ $
+                      yp[i]*sin(source.theta)*cos(source.phi)+source.pos[0]
+        refpos[i,1] = -xp[i]*cos(source.phi)+ $
+                      yp[i]*sin(source.theta)*sin(source.phi)+source.pos[1]
+        refpos[i,2] = yp[i]*cos(source.theta)+source.pos[2]
+     endfor
+     denom[2]=(refpos[1,0]-source.pos[0])*(refpos[0,1]-source.pos[1]) $
+              -(refpos[1,1]-source.pos[1])*(refpos[0,0]-source.pos[0])      
+     denom[0]=(refpos[1,1]-source.pos[1])*(refpos[0,2]-source.pos[2]) $
+              -(refpos[1,2]-source.pos[2])*(refpos[0,1]-source.pos[1])
+     denom[1]=(refpos[1,2]-source.pos[2])*(refpos[0,0]-source.pos[0]) $
+              -(refpos[1,0]-source.pos[0])*(refpos[0,2]-source.pos[2])
+  endelse
+
 ;cartesian coordinates and denominator calculation
   for i=0,nofphot-1 do begin
      pos[i,0] = +xp[i+2]*sin(source.phi)+ $
