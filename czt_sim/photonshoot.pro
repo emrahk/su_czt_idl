@@ -4,7 +4,7 @@
 ;------------------------------------------------------------------------------
 pro photonshoot,nofphot,maskhit,dethit,image,pixenergy,aperture, $
                 osource=source,odetector=detector,omask=mask,maxdelta=deltamax,$
-                contour=contour
+                plot=plot
 ;------------------------------------------------------------------------------
 
 ;------------------------------------------------------------------------------
@@ -21,15 +21,15 @@ pro photonshoot,nofphot,maskhit,dethit,image,pixenergy,aperture, $
 ;odetector   : detector can be added from outside
 ;omask       : mask can be added from outside
 ;KEYWORD
-;contour     : plot contour of the image
+;plot        : realise some plots
 ;------------------------------------------------------------------------------
 
 ;variable initialisation
   if not keyword_set(source) then $
-     source = create_struct('radius',100,'theta',0.2*!pi,'phi',-0.2*!pi, $
-                            'pos',[0,0,100],'energy',1)
+     source = create_struct('radius',20,'theta',0.2*!pi,'phi',0.75*!pi, $
+                            'pos',[1000,-1000,1000],'energy',1)
   if not keyword_set(detector) then $
-     detector=create_struct('z',-5,'pixsize',1,'pixenergy',dblarr(200,200))
+     detector=create_struct('z',-10,'pixsize',1,'pixenergy',dblarr(200,200))
   tmp = sqrt(n_elements(detector.pixenergy)) 
   detector=create_struct(detector,'pos',dblarr(tmp,tmp,2))
   if not keyword_set(mask) then getmask,[2,2],73,mask,pixsize=1
@@ -49,7 +49,7 @@ pro photonshoot,nofphot,maskhit,dethit,image,pixenergy,aperture, $
   denom=dblarr(3)
   tarray = (findgen(tmp)-(tmp/2.-0.5))*detector.pixsize
   for i=0,tmp-1 do detector.pos[*,i,0]=tarray
-  for i=0,tmp-1 do detector.pos[i,*,1]=-tarray
+  for i=0,tmp-1 do detector.pos[i,*,1]=tarray
   
 ;calculation of denominators with two reference positions in the circle 
   for i=0,1 do begin
@@ -110,7 +110,20 @@ pro photonshoot,nofphot,maskhit,dethit,image,pixenergy,aperture, $
   image=convol(pixenergy,aperture)
 
   ;plotting image
-  contour,image,nlevel=100,/fill
-  
+  if keyword_set(plot) then begin
+     window,0,xsize=1200,ysize=600
+     !p.multi=[0,4,2]
+     contour,(image/max(image))^1,nlevel=100,/fill,xr=[75,125],yr=[75,125]
+     contour,(image/max(image))^4,nlevel=100,/fill,xr=[75,125],yr=[75,125]
+     contour,(image/max(image))^7,nlevel=100,/fill,xr=[75,125],yr=[75,125]
+     surface,(image/max(image))^1
+     contour,detector.pixenergy,nlevel=100,/fill
+     range=[-tmp*detector.pixsize*0.5,tmp*detector.pixsize*0.5]
+     plot,dethit[*,0],dethit[*,1],psym=3,xr=range,yr=range
+     plot,maskhit[*,0],maskhit[*,1],psym=3,xr=range,yr=range,color=1000
+     getmask,[2,2],73,mask.pixsize,/plot
+     plot,radius*cos(angle),radius*sin(angle),psym=3
+  endif
+
 end
 ;******************************************************************************
