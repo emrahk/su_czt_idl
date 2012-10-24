@@ -1,17 +1,25 @@
-;********************************************************************************
-; uses codedmasksim.ini and photonshoot1.pro
-;--------------------------------------------------------------------------------
-pro codedmasksim
-;--------------------------------------------------------------------------------
-;Yigit Dallılar 21.10.2012
-;
-;--------------------------------------------------------------------------------
 
-;reads codedmasksim.ini
+;*******************************************************************************
+; uses codedmasksim.ini for initial datas and run photonshoot1.pro for
+; # of sources
+;-------------------------------------------------------------------------------
+pro codedmasksim,pixenergy,aperture,verbose=verbose
+;-------------------------------------------------------------------------------
+;Yigit Dallılar 21.10.2012
+;INPUT      : comes from the file "codedmasksim.ini" 
+;OUTPUT
+;pixenergy  : detector pixel energies
+;aperture   : mask aperture funtion
+;KEYWORD
+;verbose    : duration might be long so informs about the process 
+;-------------------------------------------------------------------------------
+
+;reads codedmasksim.ini and creates structs
   openr,2,"codedmasksim.ini"
-  starcnt=0
-  nofsource=0
-  sourcendx=0
+  starcnt=0                     ;counts stars for option number
+  nofsource=0                   ;number of source in the file
+  sourcendx=0                   ;source index for control different sources
+
   while not eof(2) do begin
      tmp = ' '
      readf,2,tmp
@@ -21,13 +29,15 @@ pro codedmasksim
            starcnt = starcnt + 1
         endif else begin
            case starcnt of 
+;gets # of source & creates sources for desired number
               0 : begin
                  nofsource = long(tmp)
                  source=create_struct('postype',0,'dirtype',0,'radius',0., $
-                                     'nofphot',0.,'energy',0.,'pos',[0.,0.,0.], $
-                                     'angle',[0.,0.])
+                                     'nofphot',0.,'energy',0., $
+                                      'pos',[0.,0.,0.],'angle',[0.,0.])
                  source=replicate(source,nofsource)
               end
+;fills source data
               1 : begin
                  tmp = strsplit(tmp,' ',/extract)
                  source[sourcendx].postype = byte(long(tmp[0]))
@@ -39,11 +49,13 @@ pro codedmasksim
                  source[sourcendx].angle = double([tmp[8],tmp[9]])*!pi
                  sourcendx = sourcendx + 1
               end
+;creates mask struct with the help of getmask.pro
               2 : begin
                  tmp = strsplit(tmp,' ',/extract)
                  getmask,long([tmp(1),tmp(2)]),long(tmp[0]), $
                          mask,pixsize=double(tmp[3])
               end
+;creates detector struct
               3 : begin 
                  tmp = strsplit(tmp,' ',/extract)
                  detector=create_struct('z',double(tmp[2]), $
@@ -54,6 +66,7 @@ pro codedmasksim
                  for i=0,long(tmp[0])-1 do detector.pos[*,i,0]=tarray
                  for i=0,long(tmp[0])-1 do detector.pos[i,*,1]=tarray
               end
+;random noise can be added, backgrnd is the amplitude
               4 : backgrnd = double(tmp)
               else : break
            endcase
@@ -61,18 +74,27 @@ pro codedmasksim
      endif
   endwhile
 
+;close codedmasksim.ini
   close,2
+  
+  pixenergy=detector.pixenergy
 
-;run photonshoot1.pro
+  print,source
+;run photonshoot1.pro for number of sources
+  if keyword_set(verbose) then print,'NUMBER OF SOURCES : ',nofsource
   for i=0, nofsource-1 do begin 
-     photonshoot1,source[i],detector,mask,pixenergy
-     detector.pixenergy = detector.pixenergy + pixenergy
+     photonshoot1,source[i],detector,mask,opixenergy
+     pixenergy=pixenergy+opixenergy
+     if keyword_set(verbose) then print,i+1,'. source completed...'
   endfor
 
-  image=double(convol(long(mask.apert),long(pixenergy)))
-  contour,(image/max(image))^1,nlevel=100,/fill,xr=[15,65],yr=[15,65]
-  contour,(image/max(image))^41,nlevel=100,/fill,xr=[15,65],yr=[15,65]
-  contour,(image/max(image))^301,nlevel=100,/fill,xr=[15,65],yr=[15,65]
+;imaging for just control,
+  window,0,xsize=900,ysize=300
+  !p.multi=[0,3,1]
+  image=double(convol(long(mask.apert[1:72,1:72]),long(pixenergy)))
+  contour,(image/max(image))^1,nlevel=100,/fill,xr=[15,60],yr=[15,60]
+  contour,(image/max(image))^41,nlevel=100,/fill,xr=[15,60],yr=[15,60]
+  contour,(image/max(image))^301,nlevel=100,/fill,xr=[15,60],yr=[15,60]
   
 end
-;********************************************************************************
+;*******************************************************************************
