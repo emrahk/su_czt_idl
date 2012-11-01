@@ -1,9 +1,8 @@
-
 ;*******************************************************************************
 ; uses codedmasksim.ini for initial datas and run photonshoot1.pro for
 ; # of sources
 ;-------------------------------------------------------------------------------
-pro codedmasksim,pixenergy,aperture,verbose=verbose
+pro codedmasksim,image,pixenergy,aperture,verbose=verbose
 ;-------------------------------------------------------------------------------
 ;Yigit Dallılar 21.10.2012
 ;INPUT      : comes from the file "codedmasksim.ini" 
@@ -79,7 +78,7 @@ pro codedmasksim,pixenergy,aperture,verbose=verbose
   
   pixenergy=detector.pixenergy
 
-  print,source
+  ;print,source
 ;run photonshoot1.pro for number of sources
   if keyword_set(verbose) then print,'NUMBER OF SOURCES : ',nofsource
   for i=0, nofsource-1 do begin 
@@ -88,13 +87,22 @@ pro codedmasksim,pixenergy,aperture,verbose=verbose
      if keyword_set(verbose) then print,i+1,'. source completed...'
   endfor
 
+if backgrnd ne 0 then begin
+  len=sqrt(n_elements(pixenergy))
+  pixenergy = pixenergy + backgrnd*randomn(systime(1),len,len)
+endif
+
 ;imaging for just control,
+  device,decomposed=0
+  loadct,5
   window,0,xsize=900,ysize=300
   !p.multi=[0,3,1]
-  image=double(convol(long(mask.apert[1:72,1:72]),long(pixenergy)))
-  contour,(image/max(image))^1,nlevel=100,/fill,xr=[15,60],yr=[15,60]
-  contour,(image/max(image))^41,nlevel=100,/fill,xr=[15,60],yr=[15,60]
-  contour,(image/max(image))^301,nlevel=100,/fill,xr=[15,60],yr=[15,60]
-  
+  contour,pixenergy,nlevel=40,/fill;,xr=[15,60],yr=[15,60]		
+  image=double(convol(long(mask.apert*2-1),long(pixenergy)))
+  contour,image,nlevel=40,/fill;,xr=[15,60],yr=[15,60]	
+  image=double(convol(image,exp(-shift(dist(3,3),1,1)))^2)
+  contour,image,nlevel=40,/fill;,xr=[15,60],yr=[15,60]
+  ;contour,(image/max(image))^10,nlevel=100,/fill;,xr=[15,60],yr=[15,60]	
+    
 end
 ;*******************************************************************************
