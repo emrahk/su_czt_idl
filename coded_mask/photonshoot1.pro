@@ -38,6 +38,7 @@ pro photonshoot1,source,detector,mask, $
   refpos=dblarr(2,3)               ;better approximation for manual angles
   denom=dblarr(3)                  ;denominators of the line as x,y,z
   pixenergy=detector.pixenergy
+	;stop
 
 ;sphrical to cartesian for spherical coordinates initialisation 
   if source.postype eq 1 then begin
