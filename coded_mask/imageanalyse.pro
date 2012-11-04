@@ -1,22 +1,75 @@
-;*******************************************************************************
-;this program will be for image analysing but should be improved some way:)
-;-------------------------------------------------------------------------------
-pro imageanalyse,pixenergy,aperture,image,takeimage=takeimage
-;-------------------------------------------------------------------------------
-;Yigit Dallilar 22.10.2012
-;INPUT
-;pixenergy   : written energies in the pixel
-;aperture    : mask aperture function
-;KEYWORD
-;takeimage   : if keyword is specified takes image from codedmasksim.pro
-;              no input values needed
-;-------------------------------------------------------------------------------
-;gets data from codedmasksim.pro
-;options for the simulation is inside "codedmaksim.ini"
-  if keyword_set(takeimage) then codedmasksim,pixenergy,aperture
+;****************************************************************************
+;this program is written for analysing pixenergy datas
+;----------------------------------------------------------------------------
+pro imageanalyse,odata=data,omask=mask,odetector=detector,obackgrnd=backgrnd
+;----------------------------------------------------------------------------
+; Yigit Dallilar 04.11.2012
+; OPTIONAL INPUT
+; data     : data structure can be added from outside
+; mask     : mask structure can be added from outside
+; detector : detector structure can be added from outside
+; backgrnd : background amplitude can be added from outside 
+;----------------------------------------------------------------------------
+  form_struct,tnofsource,tsource,tmask,tdetector,tbackgrnd	
+  if ~ keyword_set(data) then restore,'data/pixenergy.sav'
+  if ~ keyword_set(mask) then mask=tmask 
+  if ~ keyword_set(detector) then detector=tdetector
+  if ~ keyword_set(backgrnd) then backgrnd=tbackgrnd
 
-;imaging part
-;!! look for imaging codes
-r=double(convol(long(aperture),long(pixenergy)) 
+  ndx=bytarr(n_elements(data))
+  for i=0,n_elements(data)-1 do begin
+    cmask = compare_struct(data[i].mask,mask)
+    cdetector = compare_struct(data[i].detector,detector)
+    if cmask[0].ndiff eq 0 and cdetector[0].ndiff eq 0 then ndx[i]=1
+  endfor
+  ndx=where(ndx eq 1)
+
+  pixenergy = detector.pixenergy
+
+  if ndx[0] ne -1 then begin
+    window,0,xsize=1000,ysize=1000
+    !p.multi=[0,4,4]
+    for i=0,n_elements(ndx)-1 do begin
+      loadct,11
+      contour,convol_fft(data[ndx[i]].mask.apert*2-1,data[ndx[i]].pixenergy), $
+	/fill,nlev=40
+    endfor     	
+    print_struct,data[ndx].source[0],["postype","dirtype","radius","nofphot", $
+	"pos","angle"]
+  endif else begin
+    print,"no match for mask and detector"
+    pmask = data[0].mask
+    pdetector = data[0].detector
+
+    for i=1,n_elements(data)-1 do begin
+
+      cntrl=1
+      for j=0,n_elements(pdetector)-1 do begin
+        cdetector = compare_struct(pdetector[j],data[i].detector)
+        if cdetector[0].ndiff eq 0 then begin
+          cntrl=0
+          break
+        endif 
+      endfor
+      if cntrl eq 1 then pdetector=[pdetector,data[i].detector]  
+
+      cntrl=1
+      for j=0,n_elements(pmask)-1 do begin
+        cmask = compare_struct(pmask[j],data[i].mask)
+        if cmask[0].ndiff eq 0 then begin
+	  cntrl=0
+          break
+        endif 
+      endfor  
+      if cntrl eq 1 then pmask=[pmask,data[i].mask]
+
+    endfor
+
+    print,"available masks"
+    print_struct,pmask,["pixsize","num","array"]
+    print,"available detectors"
+    print_struct,pdetector,["length","z","pixsize"]
+  endelse
+
 end
-;*******************************************************************************
+;****************************************************************************

@@ -16,7 +16,7 @@ pro codedmasksim,data,backgrnd,plot=plot,verbose=verbose
   form_struct,nofsource,source,mask,detector,backgrnd
 
 ;data struct for output can be improved later ...
-  data=create_struct("pixenergy",detector.pixenergy,"source",source, $
+  data=create_struct("pixenergy",detector.pixenergy,"source",source[0], $
 			"detector",detector,"mask",mask)
   data=replicate(data,nofsource)
   len=sqrt(n_elements(pixenergy))
