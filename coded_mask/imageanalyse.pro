@@ -27,16 +27,22 @@ pro imageanalyse,odata=data,omask=mask,odetector=detector,obackgrnd=backgrnd
   pixenergy = detector.pixenergy
 
   if ndx[0] ne -1 then begin
+    device,decomposed=0
     window,0,xsize=1000,ysize=1000
     !p.multi=[0,4,4]
+    loadct,11
+
     for i=0,n_elements(ndx)-1 do begin
-      loadct,11
-      contour,convol_fft(data[ndx[i]].mask.apert*2-1,data[ndx[i]].pixenergy), $
-	/fill,nlev=40
+      image = convol_fft(data[ndx[i]].mask.apert*2-1,rotate(data[ndx[i]].pixenergy,2))
+      maxndx = where(image eq max(image))
+      image[maxndx] = image[maxndx]*2 
+      contour,image,/fill,nlev=40
     endfor     	
-    print_struct,data[ndx].source[0],["postype","dirtype","radius","nofphot", $
+    print_struct,data[ndx].source,["postype","dirtype","radius","nofphot", $
 	"pos","angle"]
+
   endif else begin
+
     print,"no match for mask and detector"
     pmask = data[0].mask
     pdetector = data[0].detector
@@ -69,6 +75,7 @@ pro imageanalyse,odata=data,omask=mask,odetector=detector,obackgrnd=backgrnd
     print_struct,pmask,["pixsize","num","array"]
     print,"available detectors"
     print_struct,pdetector,["length","z","pixsize"]
+
   endelse
 
 end

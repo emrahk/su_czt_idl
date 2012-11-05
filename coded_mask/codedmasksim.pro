@@ -1,7 +1,8 @@
 ;*******************************************************************************
 ;this program is the combining part of the simulation
 ;-------------------------------------------------------------------------------
-pro codedmasksim,data,backgrnd,plot=plot,verbose=verbose
+pro codedmasksim,data,backgrnd,omask=mask,odetector=detector, $
+	plot=plot,verbose=verbose
 ;-------------------------------------------------------------------------------
 ;Yigit Dallilar 22.10.2012
 ;OUTPUT
@@ -13,7 +14,9 @@ pro codedmasksim,data,backgrnd,plot=plot,verbose=verbose
 ;-------------------------------------------------------------------------------
 
 ;getting structs
-  form_struct,nofsource,source,mask,detector,backgrnd
+  form_struct,nofsource,source,fmask,fdetector,backgrnd
+  if ~ keyword_set(mask) then mask=fmask
+  if ~ keyword_set(detector) then detector=fdetector
 
 ;data struct for output can be improved later ...
   data=create_struct("pixenergy",detector.pixenergy,"source",source[0], $
@@ -24,7 +27,7 @@ pro codedmasksim,data,backgrnd,plot=plot,verbose=verbose
 ;run photonshoot1.pro for number of sources
   if keyword_set(verbose) then print,'NUMBER OF SOURCES : ',nofsource
   for i=0, nofsource-1 do begin 
-     data[i].source=source
+     data[i].source=source[i]
      photonshoot1,source[i],detector,mask,pixenergy
    ;stop ;;;;;;;;;;;;;;
      data[i].pixenergy=pixenergy ;+ backgrnd*randomn(systime(1)+i,len,len)
