@@ -1,7 +1,8 @@
 ;****************************************************************************
 ;this program is written for analysing pixenergy datas
 ;----------------------------------------------------------------------------
-pro imageanalyse,odata=data,omask=mask,odetector=detector,obackgrnd=backgrnd
+pro imageanalyse,odata=data,omask=mask,odetector=detector,obackgrnd=backgrnd, $ 
+ 		missing=missing
 ;----------------------------------------------------------------------------
 ; Yigit Dallilar 04.11.2012
 ; OPTIONAL INPUT
@@ -9,8 +10,11 @@ pro imageanalyse,odata=data,omask=mask,odetector=detector,obackgrnd=backgrnd
 ; mask     : mask structure can be added from outside
 ; detector : detector structure can be added from outside
 ; backgrnd : background amplitude can be added from outside 
+; KEYWORD
+; missing  : two pixels of missing between the detectors	
 ;----------------------------------------------------------------------------
   form_struct,tnofsource,tsource,tmask,tdetector,tbackgrnd	
+
   if ~ keyword_set(data) then restore,'data/pixenergy.sav'
   if ~ keyword_set(mask) then mask=tmask 
   if ~ keyword_set(detector) then detector=tdetector
@@ -33,14 +37,26 @@ pro imageanalyse,odata=data,omask=mask,odetector=detector,obackgrnd=backgrnd
     loadct,11
 
     for i=0,n_elements(ndx)-1 do begin
-      image = convol_fft(data[ndx[i]].mask.apert*2-1,rotate(data[ndx[i]].pixenergy,2))
+      pixenergy = data[ndx[i]].pixenergy
+      if keyword_set(missing) then begin 
+	pixenergy[15:16,*]=0
+        pixenergy[*,15:16]=0
+      endif	
+      image = convol_fft(data[ndx[i]].mask.apert*2-1,rotate(pixenergy,2))
+      ;image = convol_fft(image,exp(-shift(dist(3,3),1,1)^2))
       maxndx = where(image eq max(image))
       image[maxndx] = image[maxndx]*2 
       contour,image,/fill,nlev=40
     endfor     	
+    print,"SOURCES"
     print_struct,data[ndx].source,["postype","dirtype","radius","nofphot", $
 	"pos","angle"]
-
+    print,"****************************************************************"
+    print,"USED MASK      : "
+    print_struct,mask,["pixsize","num","array"]
+    print,"USED DETECTOR  : "
+    print_struct,detector,["pixsize","length","z"]
+    if keyword_set(missing) then print,"missing data between detectors"
   endif else begin
 
     print,"no match for mask and detector"
