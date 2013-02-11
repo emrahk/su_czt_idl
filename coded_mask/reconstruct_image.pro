@@ -26,7 +26,7 @@ endfor
 
 device,decomposed=0
 ;window,0,xsize=1000,ysize=1000
-image = convol_fft(rotate(mask.apert*2-1,1),rotate(pixenergy,2))
+image = convol_fft(rotate(mask.apert*2-1,3),rotate(pixenergy,2))
 
 end
 ;***************************************************************************
