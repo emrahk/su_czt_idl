@@ -15,7 +15,7 @@ pro getmask,array,num,mask,pixsize=sizepix,plotmask=plotmask
         for k=0,num-1 do begin
            for l=0,num-1 do begin
               mask.pos[i*num+k,j*num+l,*]=maskarr[i,j].pos[k,l,*]
-              mask.apert[i*num+k,j*num+l]=maskarr[i,j].apert[k,l]
+              mask.apert[i*num+k,j*num+l]=-maskarr[i,j].apert[k,l]
            endfor
         endfor
      endfor
@@ -24,6 +24,7 @@ pro getmask,array,num,mask,pixsize=sizepix,plotmask=plotmask
   mask.apert[0,*]=0
   mask.apert[array[0]*num,*]=0
   mask.apert[*,array[1]*num]=0
+  ;mask.apert[37,37]=255
   mask.pos[array[0]*num,*,0]=mask.pos[array[0]*num-1,*,0]+sizepix
   mask.pos[*,array[1]*num,1]=mask.pos[*,array[1]*num-1,1]-sizepix
   mask.pos[array[0]*num,*,1]=mask.pos[array[0]*num-1,*,1]

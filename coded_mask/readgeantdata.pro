@@ -18,7 +18,10 @@ PRO readgeantdata,data
     data[1:4,i]=read_binary(1,data_type=5,data_dims=4)
 
   ENDFOR
-
+  
+  close,1
+  close,2
+  
   fname = 'x' + strtrim(string(long(pos[0])),1) + 'y' + strtrim(string(long(pos[1])),1) + 'z' + strtrim(string(long(pos[2])),1)
   if fill eq 1 then fname = fname + '-filled.sav' else fname = fname + '.sav'
   
@@ -28,9 +31,32 @@ PRO readgeantdata,data
     save,data,filename='data/'+fname 
     print, "data is written to  : " , fname
   endif else begin
-    print,"File is already exist ..." 
+    print,"File already exists."
+    print,"Do you want to overwrite file('o') " ,'data/'+fname , " or create a new file('n') ?     ('q')For quit ..." 
+    
+    menu : 
+    opt=''
+    read,opt
+    case opt of 
+      'o' : begin 
+              save,data,filename='data/' + fname
+              print,"data is overwritten to  ", 'data/' + fname
+            end
+      'n' : begin
+              print,"Enter a new file name :  "
+              read,fname
+              save,data,filename=fname
+              print,"data is written to  ", fname
+            end
+      'q' : begin
+              print,"quitting program without writing data into a file. You can use data directly..."
+            end
+      else : begin
+               print, "Wrong option!!! Please use one of the given options..."
+               goto,menu
+             end
+    endcase
+    
   endelse  
   
-  close,1
-
 END
