@@ -1,29 +1,32 @@
-pro backprojection,data,img,pixenergy
+pro backprojection2,data,img,pixenergy
   
   getmask,[2,2],37,mask,pixsize=1.2
   getpixenergy,data,pixenergy
   pe = pixenergy
+  md = 4
+  dd = 1
   apert = mask.apert[1:73,1:73]
   apert[where(apert eq 0)] = 1.
   apert[where(apert eq 255)] = 0
   apert[36,36] = 0
   apert = rotate(apert,1)
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  apert = congrid(apert,73*4,73*4)
+  apert = congrid(apert,73*md,73*md)
+  pe = rebin(pe,34*dd,34*dd)
   
-  maskpos = (findgen(73*4)-36*4)*1.2/4.
-  decpos = (findgen(34)-16.5)*1.2
+  maskpos = (findgen(73*md)-36*md)*1.2/md
+  decpos = (findgen(34*dd)-16.5*dd)*1.2/dd
   skydata = create_struct('pos',dblarr(2),'ener',0.)
-  skydata = replicate(skydata,ulong64(73.*73*34*34*4*4))
+  skydata = replicate(skydata,34*dd,34*dd,73*md,73*md)
   
-  for i = 0 ,33 do begin
-    for j = 0 , 33 do begin
-      for k = 0 , 72*4+1 do begin
-        for l = 0 , 72*4+1 do begin
-          ndx = i*ulong64(34.*73*73*4*4) + j*ulong64(73.*73*4*4) + k*73*4 + l
-          skydata[ulong64(ndx)].ener = apert[k,l]*pe[i,j]
-          skydata[ulong64(ndx)].pos[0] = decpos[i] + (maskpos[k]-decpos[i])*30000/50.
-          skydata[ulong64(ndx)].pos[1] = decpos[j] + (maskpos[l]-decpos[j])*30000/50.
+  for i = 0 ,34*dd-1 do begin
+    for j = 0 , 34*dd-1 do begin
+      for k = 0 , 73*md-1 do begin
+        for l = 0 , 73*md-1 do begin
+        
+          skydata[i,j,k,l].ener = apert[k,l]*pe[i,j]
+          skydata[i,j,k,l].pos[0] = decpos[i] + (maskpos[k]-decpos[i])*30000/50.
+          skydata[i,j,k,l].pos[1] = decpos[j] + (maskpos[l]-decpos[j])*30000/50.
         endfor 
       endfor
     endfor
