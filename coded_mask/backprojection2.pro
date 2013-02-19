@@ -1,20 +1,21 @@
 ;*****************************************************************
 ; returns backprojected sky image
 ;-----------------------------------------------------------------
-pro backprojection2,data,img,pixenergy
+pro backprojection2,data,img,opix=pixenergy
 ;-----------------------------------------------------------------
 ; Yigit Dallilar  16.02.2013
 ;
 ; Under construction
 ;-----------------------------------------------------------------  
-
-  imginfo = create_struct('pos',[-1440.,-1440.],'xbin',88.,'ybin',88.,'pixsize',90.,'dist',30000.)
-  md = 4  ;divides mask pixels
-  dd = 4  ;divides dedector pixels 
+  
+  if not keyword_set(pixenergy) then convolvewithmask,data,im,estpos,pixenergy else convolvewithmask,data,im,estpos,pixenergy,opix=pixenergy
+  imginfo = create_struct('pos',[estpos[0],estpos[1]],'xbin',150.,'ybin',150.,'pixsize',50.,'dist',30000.)
+  md = 1  ;divides mask pixels
+  dd = 10  ;divides dedector pixels 
   dist = 30000
   
   getmask,[2,2],37,mask,pixsize=1.2
-  getpixenergy,data,pixenergy
+;  getpixenergy,data,pixenergy
   pe = pixenergy
   apert = mask.apert[1:73,1:73]
   apert[where(apert eq 0)] = 1.
@@ -28,20 +29,24 @@ pro backprojection2,data,img,pixenergy
   halfy = imginfo.ybin*imginfo.pixsize/2
   pixarea = imginfo.pixsize^2
   img = dblarr(imginfo.xbin,imginfo.ybin)
-  reflen = 2*1.2*dist/(50.*md)
+  reflen = 1.2*dist/(50.*md)
   refarea = reflen*reflen  
-  maskpos = (findgen(73*md)-36*md)*1.2/md
-  decpos = (findgen(34*dd)-16.5*dd)*1.2/dd
+  maskpos = (findgen(73*md)-36.5*md+0.5)*1.2/md
+  decpos = (findgen(34*dd)-17*dd+0.5)*1.2/dd
   
   print,"Initialision complete..."
   sum = 0. 
   inrange = dblarr(34*dd,34*dd,2,2)
   for i = 0 , 34*dd-1 do begin
     for j = 0 , 34*dd-1 do begin
-      inrange[i,j,0,0] = long((50./dist*(-halfx+imginfo.pos[0]-decpos[i])+decpos[i]+maskpos[73*md-1])*md/1.2+0.5)
-      inrange[i,j,0,1] = long((50./dist*(halfx+imginfo.pos[0]-decpos[i])+decpos[i]+maskpos[73*md-1])*md/1.2+0.5)-6
-      inrange[i,j,1,0] = long((50./dist*(-halfy+imginfo.pos[1]-decpos[j])+decpos[j]+maskpos[73*md-1])*md/1.2+0.5)
-      inrange[i,j,1,1] = long((50./dist*(halfy+imginfo.pos[1]-decpos[j])+decpos[j]+maskpos[73*md-1])*md/1.2+0.5)-6
+      inrange[i,j,0,0] = long((50./dist*(-halfx+imginfo.pos[0]-decpos[i])+decpos[i]+maskpos[73*md-1])*md/1.2+0.5)+1
+      inrange[i,j,0,1] = long((50./dist*(halfx+imginfo.pos[0]-decpos[i])+decpos[i]+maskpos[73*md-1])*md/1.2+0.5)-1
+      inrange[i,j,1,0] = long((50./dist*(-halfy+imginfo.pos[1]-decpos[j])+decpos[j]+maskpos[73*md-1])*md/1.2+0.5)+1
+      inrange[i,j,1,1] = long((50./dist*(halfy+imginfo.pos[1]-decpos[j])+decpos[j]+maskpos[73*md-1])*md/1.2+0.5)-1
+      if inrange[i,j,0,0] lt 0 then inrange[i,j,0,0] = 0
+      if inrange[i,j,1,0] lt 0 then inrange[i,j,1,0] = 0
+      if inrange[i,j,0,1] gt 73*md-1 then inrange[i,j,0,1] = 73*md-1
+      if inrange[i,j,0,0] gt 73*md-1 then inrange[i,j,0,0] = 73*md-1
       sum = sum + (inrange[i,j,0,1] - inrange[i,j,0,0] + 1)*(inrange[i,j,1,1] - inrange[i,j,1,0] + 1)
     endfor
   endfor
@@ -76,7 +81,7 @@ pro backprojection2,data,img,pixenergy
   skydata = skydata[where(skydata.ener ne 0)]        
   inside = bytarr(n_elements(skydata.ener),4)
   
-  print,"qqqqqqqqqq"
+;  print,"qqqqqqqqqq"
   
   ;looks for if given positions are inside the picture
   reflenovertwo = reflen/2
@@ -97,7 +102,7 @@ pro backprojection2,data,img,pixenergy
 ;       ymp[1] lt halfypluspos and ymp[1] gt -halfyminuspos then inside[i,3] = 1
 ;  endfor 
   
-  print,"elimination of useless data..."
+;  print,"elimination of useless data..."
   
   ;writes picture array
   halfxminuspos = halfx - imginfo.pos[0]
@@ -124,6 +129,8 @@ pro backprojection2,data,img,pixenergy
 ;    endif    
   endfor
 
+  img = img - mean(img)
+  img[where (img lt 0 )] = 0
   print,"image is construted..."
 
 end
