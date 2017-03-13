@@ -51,6 +51,13 @@ pro hol_motion, cnt,xstart, zstart, Efieldx, Efieldz, WP_Ano, WP_Cath, WP_ST,$
 ;August 18, 2011, yet another stupid mistake, when z goes by 5, gz must go by 5*0.005
 ;major effect on time and x position. In fact a coarsegrid position variable is set so
 ;that one can adjust which part of the detector is coarse and which part is fine
+;
+; JAN 2017
+; y position fixed as 2555 like elec_motion, but this could be
+; improved later
+; Qr_h set to 1, the absolute charge, and induced charges are now negative!
+;
+;
 
 IF NOT keyword_set(plotout) THEN plotout=0
 IF NOT keyword_set(plotps) THEN plotps=0
@@ -81,10 +88,11 @@ IF NOT keyword_set(poscoarsegrid) THEN BEGIN
   ENDELSE
   
 
-;y position for cathode
+;y position for cathode, this is bullshit
 IF NOT KEYWORD_SET(posy) then BEGIN
-  slice=reform(WP_Cath[*,950])
-  y=where(slice eq max(slice))
+  ;slice=reform(WP_Cath[*,950])
+  ;y=where(slice eq max(slice))
+   y=2555
 ENDIF ELSE y = floor(posy/gy) 
 
 ;------ HOLE MOTION --------
@@ -100,7 +108,7 @@ z = floor(zstart/gz)                          ; Initial hole position in z
 
 zh_actual= zstart
 
-Qr_h      = -1.                     ; At xstart and zstart initial charge is 1.
+Qr_h      = 1.                     ; At xstart and zstart initial ABSOLUTE charge is 1.
 QT_h[x,z] = 0.                      ; At xstart and zstart initial trapped charge is 0.
 
 QTindA = dblarr(16)
@@ -115,18 +123,17 @@ QST_ind_h = dblarr(5,1000)         ; Initial induced Charge on the steering elec
 dist=0
 
 For i=0,15 DO BEGIN
-   QA_ind_h[cnt]  = Qr_h*WP_Ano[i,x,z] ; Initial induced Charge on the anode site
-   QC_ind_h[cnt]  = Qr_h*WP_Cath[i,2555,z] ; Initial induced Charge on the cathode site
-   IF i lt 5 THEN QST_ind_h[cnt] = Qr_h*WP_ST[i,x,z]   ; Initial induced Charge on the steering electodes
+   QA_ind_h[i,cnt]  = -Qr_h*WP_Ano[i,x,z] ; Initial induced Charge on the anode site
+   QC_ind_h[i,cnt]  = -Qr_h*WP_Cath[i,y,z] ; Initial induced Charge on the cathode site
+   IF i lt 5 THEN QST_ind_h[i,cnt] = -Qr_h*WP_ST[i,x,z]   ; Initial induced Charge on the steering electodes
 ENDFOR
-
 
 t=0.                                ; Starting time
 
 ;------ OBTAIN INDUCED CHARGES WITH RESPECT TO THE DIRECTON OF ELECTRIC FIELD ------ 
 
 loopcheck=1
-WHILE ((z NE 1000) AND (Abs(Efieldz[x,z]) GT 1.) AND loopcheck) DO BEGIN     
+WHILE ((z NE 1000) AND (Abs(Efieldz[x,z]) GT 3.) AND loopcheck) DO BEGIN     
 
 ; Start while loop, except z=0 calculate actual x dimension and time 
 ; Check electric field and make sure electron moves
@@ -142,11 +149,11 @@ th_actual = [th_actual,t]           ; In order to find in terms of nanosecond, I
 Dxh = mobh*Efieldx[x,z]*Dth           ; Obtain x step
 xhv = xhv + Dxh
 
-if not keyword_set(timetrap) then begin
+if keyword_set(timetrap) then begin
    
-   QT_h[x,z] = Qr_h-Exp(-t/tauh)
-   Qr_h = Exp(-t/tauh)        
-
+   QT_h[x,z] = Qr_h-exp(-t/tauh) ;still absolute values
+   Qr_h = exp(-t/tauh)        
+;stop
 endif else begin
 
    L = Sqrt(Dxh^2+gz^2)
@@ -162,9 +169,10 @@ endif else begin
 endelse
 
 FOR i=0,15 DO BEGIN
-   QTindA[i]=QTindA[i]+(QT_h[x,z]*WP_Ano[i,x,z]) ;this is an approximation that may be problematic for large x movements
-   QTindC[i]=QTindC[i]+(QT_h[x,z]*WP_Cath[i,2555,z]) ;this is an approximation that may be problematic for large x movements
-   IF i lt 5 THEN QTindST[i]=QTindST[i]+(QT_h[x,z]*WP_ST[i,x,z]) ;this is an approximation that may be problematic for large x movements
+   ;induced charge is negative
+   QTindA[i]=QTindA[i]-(QT_h[x,z]*WP_Ano[i,x,z]) ;this is an approximation that may be problematic for large x movements
+   QTindC[i]=QTindC[i]-(QT_h[x,z]*WP_Cath[i,y,z]) ;this is an approximation that may be problematic for large x movements
+   IF i lt 5 THEN QTindST[i]=QTindST[i]-(QT_h[x,z]*WP_ST[i,x,z]) ;this is an approximation that may be problematic for large x movements
 ENDFOR
 
 ;----- CHECK THE DIRECTION OF ELECTRIC FIELD LINES -------
@@ -195,11 +203,12 @@ xh_actual = [xh_actual,xhv]
 zh_actual = [zh_actual,z*0.005]
 
 FOR i=0,15 DO BEGIN
-   QA_ind_h[i,cnt+1] = Qr_h*WP_Ano[i,x,z] + QTindA[i] ; Final induced charge on anode site
-   QC_ind_h[i,cnt+1] = Qr_h*WP_Cath[i,2555,z] + QTindC[i] ; Final induced charge on cathode site
-   IF i lt 5 THEN QST_ind_h[i,cnt+1] = Qr_h*WP_ST[i,x,z] + QTindST[i] ; Final induced charge on steering electrode site
+   QA_ind_h[i,cnt+1] = -Qr_h*WP_Ano[i,x,z] + QTindA[i] ; Final induced charge on anode site
+   QC_ind_h[i,cnt+1] = -Qr_h*WP_Cath[i,y,z] + QTindC[i] ; Final induced charge on cathode site
+   IF i lt 5 THEN QST_ind_h[i,cnt+1] = -Qr_h*WP_ST[i,x,z] + QTindST[i] ; Final induced charge on steering electrode site
 ENDFOR
 
+;stop
 cnt = cnt + 1
 
 
