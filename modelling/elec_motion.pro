@@ -59,6 +59,13 @@ pro elec_motion,lastpos, cnt, xstart, zstart, Efieldx, Efieldz, WP_Ano, WP_Cath,
 ;that the absolute value of the electric field in z direction to be minimum 3, however, I need
 ;to find a better fix to this problem.
 
+;Jan 2017
+;
+; y position fixed to 2555 at the beginning. This is not very good,
+;and needs to be corrected later. We should avoid using magic
+;numbers...
+;
+
 IF NOT keyword_set(plotout) THEN plotout=0
 IF NOT keyword_set(plotps) THEN plotps=0
 IF NOT keyword_set(verbose) THEN verbose=0
@@ -88,8 +95,9 @@ IF NOT keyword_set(poscoarsegrid) THEN BEGIN
   
 ;y position for cathode
 IF NOT KEYWORD_SET(posy) then BEGIN
-  slice=reform(WP_Cath[*,950])
-  y=where(slice eq max(slice))
+;  slice=reform(WP_Cath[*,950])
+;  y=where(slice eq max(slice))
+   y=2555
 ENDIF ELSE y=floor(posy/gy)
 
 ;------ ELECTRON MOTION --------
@@ -120,9 +128,9 @@ QST_ind_e = dblarr(5,1000)         ; Initial induced Charge on the steering elec
 dist=0
 
 For i=0,15 DO BEGIN
-   QA_ind_e[cnt]  = Qr_e*WP_Ano[i,x,z] ; Initial induced Charge on the anode site
-   QC_ind_e[cnt]  = Qr_e*WP_Cath[i,2555,z] ; Initial induced Charge on the cathode site
-   IF i lt 5 THEN QST_ind_e[cnt] = Qr_e*WP_ST[i,x,z]   ; Initial induced Charge on the steering electodes
+   QA_ind_e[i,cnt]  = Qr_e*WP_Ano[i,x,z] ; Initial induced Charge on the anode site
+   QC_ind_e[i,cnt]  = Qr_e*WP_Cath[i,y,z] ; Initial induced Charge on the cathode site
+   IF i lt 5 THEN QST_ind_e[i,cnt] = Qr_e*WP_ST[i,x,z]   ; Initial induced Charge on the steering electodes
 ENDFOR
 
 t=0.                                ; Starting time
@@ -173,7 +181,7 @@ endelse
 
 FOR i=0,15 DO BEGIN
    QTindA[i]=QTindA[i]+(QT_e[x,z]*WP_Ano[i,x,z])                 ;this is an approximation that may be problematic for large x movements
-   QTindC[i]=QTindC[i]+(QT_e[x,z]*WP_Cath[i,2555,z])                ;this is an approximation that may be problematic for large x movements
+   QTindC[i]=QTindC[i]+(QT_e[x,z]*WP_Cath[i,y,z])                ;this is an approximation that may be problematic for large x movements
    IF i lt 5 THEN QTindST[i]=QTindST[i]+(QT_e[x,z]*WP_ST[i,x,z]) ;this is an approximation that may be problematic for large x movements
 ENDFOR
 
@@ -212,7 +220,7 @@ ze_actual = [ze_actual,z*0.005]
 
 FOR i=0,15 DO BEGIN
    QA_ind_e[i,cnt+1] = Qr_e*WP_Ano[i,x,z] + QTindA[i] ; Final induced charge on anode site
-   QC_ind_e[i,cnt+1] = Qr_e*WP_Cath[i,2555,z] + QTindC[i] ; Final induced charge on cathode site
+   QC_ind_e[i,cnt+1] = Qr_e*WP_Cath[i,y,z] + QTindC[i] ; Final induced charge on cathode site
    IF i lt 5 THEN QST_ind_e[i,cnt+1] = Qr_e*WP_ST[i,x,z] + QTindST[i] ; Final induced charge on steering electrode site
 ENDFOR
 
@@ -225,7 +233,7 @@ IF verbose THEN $
 
 ENDWHILE
 
-;stop
+;stop ;WHY?????
 
 IF lastpos eq 0 THEN BEGIN
    WHILE z ne 0 DO BEGIN
@@ -238,10 +246,11 @@ IF lastpos eq 0 THEN BEGIN
       ze_actual=[ze_actual,z*0.005]
       FOR i=0,15 DO BEGIN
          QA_ind_e[i,cnt+1] = Qr_e*WP_Ano[i,x,z] + QTindA[i]            ; Final induced charge on anode site
-         QC_ind_e[i,cnt+1] = Qr_e*WP_Cath[i,2555,z] + QTindC[i]           ; Final induced charge on cathode site
+         QC_ind_e[i,cnt+1] = Qr_e*WP_Cath[i,y,z] + QTindC[i]           ; Final induced charge on cathode site
          IF i lt 5 THEN QST_ind_e[i,cnt+1] = Qr_e*WP_ST[i,x,z] + QTindST[i] ; Final induced charge on steering electrode site
       ENDFOR
       cnt=cnt+1
+ ;     print,x,z
  ;     STOP
    ENDWHILE
 ENDIF
