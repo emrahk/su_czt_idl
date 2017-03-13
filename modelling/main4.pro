@@ -1,9 +1,36 @@
+;*************************************************************************************
+;turns given geant output to an event and returns induced charge for
+;all electrodes. New version
+;-------------------------------------------------------------------------------------
+
 PRO main4,data,event,efx,efz,wpa,wpc,wpst,eventnumb,time,qc,qa,qst, $
           noqc,noqa,noqst,clouddiv=divcloud,timetrap=timetrap, $
           calct=tcalc,divide=divide,noiselev=levnoise,plot=plot
 
+;INPUTS
+;data        : output from geant which can be read with geteventinfo
+;;event       : event input (x,z,t)ac -> x,y position and time
+;                          w(a,c,st) -> have electrode signals with time
+;                          size      -> has how many elements
+;efx,efz     : electric field input
+;wp(a,c,st)  : weighting potential input
+;eventnumb   : index of the event in current data.
+;
+;OUTPUTS
+;time        : time scale specified in the program
+;q(c,a,st)   : induced charged on electrodes with respect to time
+;noq(c,s,st) : induced signals with noise
+;OPTIONAL INPUTS
+;clouddiv    :divide clouds, currently not functional
+;timetrap    : use time for trapping instead of distance
+;calct       : ?  
+;plot        : plots trajectory of the all clouds
+;-------------------------------------------------------------------------------------
+  
 IF NOT keyword_set(divcloud) THEN divcloud = 1
+IF NOT keyword_set(levnoise) THEN levnoise=3.
 
+;gets event info for all clouds in the (eventnumb)th event.
 geteventinfo,data,eventnumb,pos,ener
 cloudnumb = n_elements(ener)
 cloud = create_struct('xe_actual',dblarr(1000),'ze_actual',dblarr(1000),'te_actual',dblarr(1000))
@@ -11,7 +38,8 @@ holes = create_struct('xh_actual',dblarr(1000),'zh_actual',dblarr(1000),'th_actu
 cloud = replicate (cloud,cloudnumb)
 holes = replicate (holes,cloudnumb)
 Qr_e = ener                     ;???????? 2 choosen as bandgap !!!multiply by e
-Qr_h = -ener                    ;???????? 2 choosen as bandgap !!!multiply by e
+Qr_h = ener                    ;???????? 2 choosen as bandgap !!!multiply by e
+;because induced charges are negative
 
 timee = findgen(1001)*1e-9
 timeh = findgen(1001)*1e-8
@@ -42,11 +70,11 @@ FOR i=0,cloudnumb-1 DO BEGIN
    if not keyword_set (timetrap) then begin
       elec_motion,0., cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
                   te_actual, xe_actual, ze_actual, QAinde, QCinde, QSTinde,$
-                  coarsegridpos=[0.75,4.7]    
+                  coarsegridpos=[0.75,4.7], ypos=pos[1,i]
    endif else begin
       elec_motion,0., cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
                   te_actual, xe_actual, ze_actual, QAinde, QCinde, QSTinde,$
-                  coarsegridpos=[0.75,4.7],/timetrap
+                  coarsegridpos=[0.75,4.7],/timetrap, ypos=pos[1,i]
    endelse
 
    te_actual = te_actual[1:cnt]
@@ -64,42 +92,44 @@ FOR i=0,cloudnumb-1 DO BEGIN
          IF j lt 5 THEN QST[j,k] = QST[j,k] + QSTinde[j,cnt]
       ENDFOR
    ENDFOR
-   ;stop
+   
    IF keyword_set(plot) THEN trajectory,xe_actual,ze_actual,i
    ; timetrap option activated by holes
    if not keyword_set(timetrap) then begin
       hol_motion, cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
                   th_actual, xh_actual, zh_actual, QAindh, QCindh, QSTindh,$
-                  coarsegridpos=[0.75,4.7]
+                  coarsegridpos=[0.75,4.7], ypos=pos[1,i]
    endif else begin
       hol_motion, cnt, pos[0,i], pos[2,i], efx, efz, wpa, wpc, wpst,$
                   th_actual, xh_actual, zh_actual, QAindh, QCindh, QSTindh,$
-                  coarsegridpos=[0.75,4.7], /timetrap
+                  coarsegridpos=[0.75,4.7], /timetrap, ypos=pos[1,i]
    endelse
    
    cnt=cnt-1
    th_actual = th_actual[1:cnt]
    t=floor(max(th_actual-1e-6)*1e8)+ 1000
    if t gt 1800 then t=1800
-   QAindh = Qaindh*Qr_e[i]
-   QCindh = QCindh*Qr_e[i]
-   QSTindh = QSTindh*Qr_e[i]
+;stop
+   QAindh = Qaindh*Qr_h[i]
+   QCindh = QCindh*Qr_h[i]
+   QSTindh = QSTindh*Qr_h[i]
    FOR j=0,15 DO BEGIN
       QA[j,0:t] = QA[j,0:t] + interpol(QAindh[j,1:cnt],th_actual,time[0:t])
-      QC[j,0:t] = QC[j,0:t] + interpol(QCindh[j,1:cnt],th_actual,time[0:t])
+      QC[j,0:t] = QC[j,0:t] + interpol(QCindh[j,1:cnt],th_actual,time[0:t]) ;find the bug here
       IF j lt 5 THEN QST[j,0:t] = QST[j,0:t] + interpol(QSTindh[j,1:cnt],th_actual,time[0:t])
       QA[j,t+1:n_elements(time)-1] = QA[j,t+1:n_elements(time)-1] + QAindh[j,cnt]
       QC[j,t+1:n_elements(time)-1] = QC[j,t+1:n_elements(time)-1] + QCindh[j,cnt]
       IF j lt 5 THEN QST[j,t+1:n_elements(time)-1] = QST[j,t+1:n_elements(time)-1] + QSTindh[j,cnt]
    ENDFOR
+   ;stop
     IF keyword_set(plot) THEN trajectory,xh_actual,zh_actual,1,/hole
-    ;stop
+    stop
  ENDFOR
 
 ;noise level added...
-levnoise = levnoise * 2
+levnoise = levnoise * 2 ; WHY?
 rand = randomu(systime(1),n_elements(time))
-plot, rand
+;plot, rand
 if keyword_set(levnoise) then begin
    for i=0,15 do begin
       for j=0,n_elements(time)-1 do begin
