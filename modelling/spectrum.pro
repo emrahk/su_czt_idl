@@ -1,5 +1,6 @@
 ;runs main.pro for all events and get histograms for all events
-PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,clouddiv=divcloud,vcount=count,verbose=verbose,timetrap=timetrap,noiselev=levnoise
+
+PRO spectrum,data,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,clouddiv=divcloud,vcount=count,verbose=verbose,timetrap=timetrap,noiselev=levnoise
   
 ;INPUT
 ;-------------------------------
@@ -10,11 +11,13 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,cloudd
 ;-------------------------------
 ;spe     : struct spe with anode,cathode and steer arrays
 
-  IF NOT keyword_set(divcloud) THEN divcloud = 1
+  IF NOT keyword_set(divcloud) THEN divcloud = 1 ;may not be implemented
 
-  IF NOT keyword_set(count) THEN index = where(data[0,*] eq 0,count) ;getting indexes of first clouds
-  te = 1000
-  th = 1450
+  IF NOT keyword_set(count) THEN index = where(data[0,*] eq 0,count) ;getting indexes of first clouds 
+
+  ;what are these arbitrary numbers, now obsolete
+  ;te = 1000
+  ;th = 1450
 
   ;define energy array
   anarr = dblarr(16,count)
@@ -22,13 +25,13 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,cloudd
   starr = dblarr(5,count)
 
   ;gets spectrum array
-  anode = dblarr(16,131)
-  cathode = dblarr(16,131)
-  steer = dblarr(5,131)
-  perc=1
+  anode = dblarr(16,151)
+  cathode = dblarr(16,151)
+  steer = dblarr(5,151)
+  perc=0.1
   ;count=11
 
-  print, 'calculating sigma data...'
+  print, 'calculating sigma data... BUT NOT USED?'
   tcal = dblarr(divcloud,1001)
 
   cloudsize,sigma,timearr,ftime=1e-6
@@ -48,18 +51,19 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,cloudd
      ;timetrap option added...
      if not keyword_set (timetrap) then begin
         
-        main4,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst,$
+        main4_ek,data,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst,$
               noqc,noqa,noqst,noiselev=levnoise
         
      endif else begin
         
-        main4,data,event,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst,$
-              noqc,noqa,noqst,,noiselev=levnoise,/timetrap
+        main4_ek,data,efx,efz,wpa,wpc,wpst,i+1,time,qc,qa,qst,$
+              noqc,noqa,noqst,noiselev=levnoise,/timetrap
 
      endelse
 
      ;to understand program is working...
      if keyword_set(verbose) then begin
+        print,i
         IF floor((i+1)*100./count) ge perc THEN BEGIN
            time=create_struct('hour',lonarr(2),'min',lonarr(2),'sec',lonarr(2))
            pasttime = floor(systime(1)-itime)
@@ -78,10 +82,19 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,cloudd
         ENDIF
      endif
 
-     ;takes the max of signal between 0 and te
-     FOR j=0,15 DO anarr[j,i] = max(qa[j,0:te])
-     FOR j=0,15 DO caarr[j,i] = max(-qc[j,0:th])
-     FOR j=0,4 DO starr[j,i] = max(qst[j,0:te])
+     ;takes the max of signal between 0 and te - wrong! te, th arbitrary
+;     FOR j=0,15 DO anarr[j,i] = max(qa[j,0:te])
+;     FOR j=0,15 DO caarr[j,i] = max(-qc[j,0:th])
+;     FOR j=0,4 DO starr[j,i] = max(qst[j,0:te])
+
+;take end of run, need to check what's going on here
+
+     sz=size(qa)
+     
+     FOR j=0,15 DO anarr[j,i] = qa[j,sz[2]-1L]
+     FOR j=0,15 DO caarr[j,i] = -qc[j,sz[2]-1L]
+     FOR j=0,4 DO starr[j,i] = qst[j,sz[2]-1L]
+
      
   ENDFOR
 
@@ -92,9 +105,9 @@ PRO spectrum,data,event,efx,efz,wpa,wpc,wpst,spe,anarr,caarr,starr,evlist,cloudd
   evlist[33:35,*] = starr[1:3,*]
 
   ;writing results to histograms
-  FOR i=0,15 DO anode[i,0:130] = histogram(anarr[i,0:count-1],min=0,max=130)
-  FOR i=0,15 DO cathode[i,0:130] = histogram(caarr[i,0:count-1],min=0,max=130)
-  FOR i=0,4 DO steer[i,0:130] = histogram(starr[i,0:count-1],min=0,max=130)
+  FOR i=0,15 DO anode[i,0:150] = histogram(anarr[i,0:count-1],min=0,max=150)
+  FOR i=0,15 DO cathode[i,0:150] = histogram(caarr[i,0:count-1],min=0,max=150)
+  FOR i=0,4 DO steer[i,0:150] = histogram(starr[i,0:count-1],min=0,max=150)
 
   ;creating spe struct
   spe = create_struct('anode',anode,'cathode',cathode,'steer',steer)
