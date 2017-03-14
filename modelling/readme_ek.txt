@@ -1,3 +1,19 @@
+HOW TO RUN the 2D Creative electron detector simulation to create a spectrum and relevant data
+
+inside CZTMODEL directory
+restore,'CR_EL_DATA/IDLDATA/comsoldata.sav'
+restore,'CR_EL_DATA/IDLDATA/geantoutput.sav'
+
+say you want to run event number 200001 - 250000, then
+count9=indgen(25000,/long)+200001L 
+p_spectrum, data, efx, efz, wpa, wpc, wpst, spe9, anarr9, caarr9, starr9, evlist9, vcount=count9, /verbose, /timetrap, noiselev=3. 
+
+start with smaller number of events.
+check inside p_spectrum and main4_ek for input and output parameters.
+
+============
+Some information regarding fixes to Yigit's programs and ongoing problems to be fixed
+=============
 There are 4 main programs,
 main.pro, main2.pro main3.pro and main4.pro
 
